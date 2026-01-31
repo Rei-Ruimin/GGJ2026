@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>假面舞会的迟到者 (The Uninvited Guest)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --human-accent: #a8a8a8;
+            --heaven-accent: #81d4fa;
+            --hell-accent: #ff6f00;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Landscape Container */
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border: 4px solid #333;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* UI Layer - Adjusted for Landscape */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Top HUD */
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 480px; /* Match grid width roughly */
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 2;
+        }
+
+        /* Bottom Controls */
+        .mask-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        .mask-btn {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #666;
+            background: #222;
+            color: white;
+            font-family: inherit;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .mask-btn:hover { transform: translateY(-2px); }
+        .mask-btn.active {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.5);
+        }
+
+        /* Dimension Specific Styles */
+        .mask-btn[data-type="human"].active { border-color: var(--human-accent); background: #505050; }
+        .mask-btn[data-type="heaven"].active { border-color: var(--heaven-accent); background: #0d47a1; }
+        .mask-btn[data-type="hell"].active { border-color: var(--hell-accent); background: #b71c1c; }
+
+        .mask-btn.locked {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+        .mask-btn.locked::after {
+            content: "X";
+            position: absolute;
+            color: red;
+            font-size: 40px;
+        }
+
+        /* Dialog Box - Centered over grid */
+        #dialog-box {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 460px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid white;
+            padding: 20px;
+            display: none;
+            pointer-events: auto;
+            text-align: left;
+            z-index: 20;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        #dialog-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        #dialog-next {
+            float: right;
+            font-size: 12px;
+            color: #ffff00;
+            cursor: pointer;
+            animation: blink 1s infinite;
+        }
+
+        /* Overlay Screens */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            pointer-events: auto;
+            z-index: 30;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 32px; color: #fff; margin-bottom: 30px; line-height: 1.4; text-transform: uppercase; letter-spacing: 2px; }
+        p { font-size: 14px; color: #ccc; margin-bottom: 40px; max-width: 600px; line-height: 1.8; }
+        
+        button.start-btn {
+            padding: 20px 40px;
+            font-family: inherit;
+            font-size: 20px;
+            background: #fff;
+            border: 4px solid #888;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        button.start-btn:hover { background: #ddd; transform: scale(1.05); }
+
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.6;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        .controls-hint {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="scanlines"></div>
+        
+        <div id="ui-layer">
+            <div class="hud">
+                <span id="level-display">LEVEL 1</span>
+                <span>WASD: Move</span>
+            </div>
+            
+            <div class="mask-controls">
+                <button class="mask-btn active" data-type="human" onclick="game.switchDimension(0)">1</button>
+                <button class="mask-btn" data-type="heaven" onclick="game.switchDimension(1)">2</button>
+                <button class="mask-btn" data-type="hell" onclick="game.switchDimension(2)">3</button>
+            </div>
+        </div>
+
+        <div id="dialog-box">
+            <div id="dialog-text">...</div>
+            <div id="dialog-next" onclick="game.advanceDialog()">[继续 / NEXT]</div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <h1>假面舞会的迟到者<br><span style="font-size:18px; color:#888;">The Uninvited Guest</span></h1>
+            <p>GGJ 2026 Submission<br><br>你因面具勒得太紧，在舞会上晕倒了。<br>灵魂游走于人间、天堂与地狱的夹缝中。<br><br>注意：<br>如果你切换到的世界在该位置有障碍物，<br>你将被"空间重叠"挤压致死。</p>
+            <button class="start-btn" onclick="game.startLevel(0)">戴上面具 (Start)</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="overlay hidden">
+            <h1 style="color: #ff4444;">面具破碎</h1>
+            <p id="death-reason">空间挤压致死</p>
+            <button class="start-btn" onclick="game.restartLevel()">重置时间 (Retry)</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="overlay hidden">
+            <h1 style="color: #44ff44;">宿醉醒来</h1>
+            <div style="background: #000; padding: 30px; border: 4px solid white; max-width: 500px; text-align: left;">
+                <p style="color: #fff; margin-bottom: 20px; font-size: 14px;">> 你猛地吸了一口气：<br>“呼——哈！我没死！我只是……被这该死的羽毛面具勒晕了，还掉进了喷泉池里。”</p>
+                <p style="color: #aaa; font-size: 14px;">> 保安冷漠地看着你：<br>“先生，禁止在喷泉里睡觉。而且……你的面具戴反了。”</p>
+            </div>
+            <br>
+            <button class="start-btn" onclick="location.reload()">整理仪容 (End)</button>
+        </div>
+    </div>
+
+    <div class="controls-hint">
+        Keyboard: WASD / Arrows to Move | 1 / 2 / 3 to Switch Reality<br>
+        UI: Click buttons to switch manually.
+    </div>
+
+    <script>
+        // --- Game Maps ---
+        // 0: Path, 1: Wall, 2: Item
+        
+        // Helper: Create a map full of walls, BUT ensure (0,0) is always safe (0)
+        const ALL_WALLS = Array.from({length: 10}, (_, y) => 
+            Array.from({length: 10}, (_, x) => (x === 0 && y === 0) ? 0 : 1)
+        );
+
+        // --- Level 1 ---
+        const LV1_HUMAN = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Start(0,0) Safe
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+        ];
+
+        // --- Level 2 (FIXED) ---
+        const LV2_HUMAN = [
+            [0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // Start(0,0) Safe
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 0, 0, 1, 1, 1], // Landing (4,2).
+            [1, 1, 1, 1, 0, 2, 0, 1, 1, 1], // Item (5,3).
+            [1, 1, 1, 1, 0, 0, 0, 1, 1, 1], // (6,4) is safe switch spot
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Wall at (6,5), forcing switch
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]  // End (9,9)
+        ];
+
+        const LV2_HEAVEN = [
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1], // Start(0,0) Safe
+            [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Blocked at (4,3), forcing switch
+            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1], // (6,4) is safe switch spot
+            [1, 1, 1, 1, 1, 1, 0, 0, 0, 1], // Path continues from (6,5)
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 1], 
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 0]  // Reach End (9,9)
+        ];
+
+        // --- Level 3 (REPAIRED & OPENED) ---
+        // Path logic: Start -> Hell(Left) -> Item 1 -> Human(Middle) -> Item 2 -> Human(Right) -> End
+
+        const LV3_HUMAN = [
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Start(0,0) Safe
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 0, 0, 0, 0, 1], // (4,5) Entrance from Hell
+            [1, 1, 1, 1, 0, 2, 0, 0, 0, 1], // Item(5,6). FIXED: (6,6) and (7,6) are now 0 (PATH)
+            [1, 1, 1, 1, 1, 1, 1, 0, 0, 1], // Path down at x=7,8
+            [1, 1, 1, 1, 1, 1, 1, 0, 0, 1], // Wide path
+            [1, 1, 1, 1, 1, 1, 1, 0, 0, 0]  // End (9,9)
+        ];
+
+        const LV3_HEAVEN = [
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1], // Start(0,0) Safe
+            [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        const LV3_HELL = [
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Start(0,0) Safe
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 2, 1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 0, 0, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]  // End (9,9)
+        ];
+
+        const LEVELS = [
+            {
+                name: "Level 1: 宿醉之始",
+                lockedDimensions: [false, true, true],
+                start: {x: 0, y: 0},
+                end: {x: 9, y: 9},
+                maps: [LV1_HUMAN, ALL_WALLS, ALL_WALLS],
+                items: { '4,4': { text: "主角：这杯 1982 年的香槟……味道怎么有点像止咳糖浆？", collected: false } }
+            },
+            {
+                name: "Level 2: 天使的邀约",
+                lockedDimensions: [false, false, true],
+                start: {x: 0, y: 0},
+                end: {x: 9, y: 9},
+                maps: [LV2_HUMAN, LV2_HEAVEN, ALL_WALLS],
+                items: { '5,3': { text: "主角：好漂亮的羽毛……等等，这真的是天使的羽毛吗？还是只是鹅毛笔？", collected: false } }
+            },
+            {
+                name: "Level 3: 终极派对",
+                lockedDimensions: [false, false, false],
+                start: {x: 0, y: 0},
+                end: {x: 9, y: 9},
+                maps: [LV3_HUMAN, LV3_HEAVEN, LV3_HELL],
+                items: {
+                    '2,4': { text: "金色面具： “这面具勒得我太阳穴疼……可能这就是我看见地狱的原因。”", collected: false },
+                    '5,6': { text: "喷泉池： “水声越来越近了……我得在被淹死之前醒过来！”", collected: false }
+                }
+            }
+        ];
+
+        // --- Engine ---
+
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.tileSize = 50;
+                
+                // Landscape settings
+                this.gridW = 500;
+                this.gridH = 500;
+                this.offsetX = (800 - 500) / 2; // Center horizontally
+                this.offsetY = (600 - 500) / 2 + 10; // Center vertically with slight offset
+                
+                this.currentLevelIdx = 0;
+                this.player = { x: 0, y: 0 };
+                this.dimension = 0; 
+                this.state = 'start'; 
+                
+                this.colors = {
+                    0: { bg: '#2c2c2c', wall: '#505050', path: '#3a3a3a', player: '#fff', ambient: '#111' },
+                    1: { bg: '#e0f7fa', wall: '#81d4fa', path: '#b3e5fc', player: '#ffd700', ambient: '#002f6c' },
+                    2: { bg: '#210000', wall: '#b71c1c', path: '#4a0000', player: '#ff3d00', ambient: '#1a0000' }
+                };
+
+                this.bindInput();
+                this.loop = this.loop.bind(this);
+                requestAnimationFrame(this.loop);
+            }
+
+            bindInput() {
+                window.addEventListener('keydown', (e) => {
+                    if (this.state !== 'playing' && this.state !== 'dialog') return;
+
+                    if (this.state === 'dialog') {
+                        if (e.key === ' ' || e.key === 'Enter') this.advanceDialog();
+                        return;
+                    }
+
+                    switch(e.key.toLowerCase()) {
+                        case 'w': case 'arrowup': this.move(0, -1); break;
+                        case 's': case 'arrowdown': this.move(0, 1); break;
+                        case 'a': case 'arrowleft': this.move(-1, 0); break;
+                        case 'd': case 'arrowright': this.move(1, 0); break;
+                        case '1': this.switchDimension(0); break;
+                        case '2': this.switchDimension(1); break;
+                        case '3': this.switchDimension(2); break;
+                    }
+                });
+            }
+
+            startLevel(idx) {
+                this.currentLevelIdx = idx;
+                const level = LEVELS[this.currentLevelIdx];
+                this.player = { ...level.start };
+                this.dimension = 0;
+                this.state = 'playing';
+                
+                for(let key in level.items) level.items[key].collected = false;
+
+                document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+                document.getElementById('level-display').innerText = level.name.toUpperCase();
+                this.updateMaskUI();
+                
+                if (idx === 0) {
+                    this.showDialog("主角：头好痛……这是哪？");
+                }
+            }
+
+            restartLevel() {
+                this.startLevel(this.currentLevelIdx);
+            }
+
+            move(dx, dy) {
+                if (this.state !== 'playing') return;
+
+                const newX = this.player.x + dx;
+                const newY = this.player.y + dy;
+                const level = LEVELS[this.currentLevelIdx];
+
+                if (newX < 0 || newX >= 10 || newY < 0 || newY >= 10) return;
+                if (level.maps[this.dimension][newY][newX] === 1) return;
+
+                this.player.x = newX;
+                this.player.y = newY;
+                this.checkTileEvents();
+            }
+
+            switchDimension(newDim) {
+                if (this.state !== 'playing') return;
+                if (this.dimension === newDim) return;
+                
+                const level = LEVELS[this.currentLevelIdx];
+                if (level.lockedDimensions[newDim]) return;
+
+                // 安全检测：是否在出生点
+                const isAtStart = this.player.x === level.start.x && this.player.y === level.start.y;
+
+                // 碰撞逻辑：如果不在出生点，且目标维度当前位置是墙，则死亡
+                if (!isAtStart && level.maps[newDim][this.player.y][this.player.x] === 1) {
+                    this.dimension = newDim; 
+                    this.die("空间重叠：你的身体卡在了墙里。");
+                    return;
+                }
+
+                this.dimension = newDim;
+                this.updateMaskUI();
+                
+                this.canvas.style.filter = 'contrast(1.5) brightness(1.2)';
+                setTimeout(() => this.canvas.style.filter = 'none', 100);
+            }
+
+            updateMaskUI() {
+                const level = LEVELS[this.currentLevelIdx];
+                document.querySelectorAll('.mask-btn').forEach(btn => {
+                    btn.classList.remove('active', 'locked');
+                    const typeIdx = btn.dataset.type === 'human' ? 0 : btn.dataset.type === 'heaven' ? 1 : 2;
+                    if (level.lockedDimensions[typeIdx]) btn.classList.add('locked');
+                    if (typeIdx === this.dimension) btn.classList.add('active');
+                });
+            }
+
+            checkTileEvents() {
+                const level = LEVELS[this.currentLevelIdx];
+                const tileType = level.maps[this.dimension][this.player.y][this.player.x];
+
+                if (this.player.x === level.end.x && this.player.y === level.end.y) {
+                    if (this.currentLevelIdx < LEVELS.length - 1) {
+                        this.startLevel(this.currentLevelIdx + 1);
+                    } else {
+                        this.victory();
+                    }
+                    return;
+                }
+
+                const key = `${this.player.x},${this.player.y}`;
+                if ((tileType === 2 || level.items[key]) && level.items[key] && !level.items[key].collected) {
+                    level.items[key].collected = true;
+                    this.showDialog(level.items[key].text);
+                }
+            }
+
+            die(reason) {
+                this.state = 'gameover';
+                document.getElementById('death-reason').innerText = reason;
+                document.getElementById('game-over-screen').classList.remove('hidden');
+            }
+
+            victory() {
+                this.state = 'victory';
+                document.getElementById('victory-screen').classList.remove('hidden');
+            }
+
+            showDialog(text) {
+                this.state = 'dialog';
+                const box = document.getElementById('dialog-box');
+                const content = document.getElementById('dialog-text');
+                box.style.display = 'block';
+                content.innerText = text;
+            }
+
+            advanceDialog() {
+                document.getElementById('dialog-box').style.display = 'none';
+                this.state = 'playing';
+            }
+
+            draw() {
+                // Clear Full Canvas with Ambient Theme Color
+                const theme = this.colors[this.dimension];
+                this.ctx.fillStyle = theme.ambient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.state === 'start') return;
+
+                const level = LEVELS[this.currentLevelIdx];
+                const map = level.maps[this.dimension];
+
+                // --- Draw Grid Background (The Play Area) ---
+                this.ctx.fillStyle = '#000'; // Border for grid
+                this.ctx.fillRect(this.offsetX - 5, this.offsetY - 5, this.gridW + 10, this.gridH + 10);
+
+                // --- Draw Map Tiles ---
+                for (let y = 0; y < 10; y++) {
+                    for (let x = 0; x < 10; x++) {
+                        const tile = map[y][x];
+                        const posX = this.offsetX + x * this.tileSize;
+                        const posY = this.offsetY + y * this.tileSize;
+
+                        // Floor
+                        this.ctx.fillStyle = theme.path;
+                        this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
+
+                        // Walls
+                        if (tile === 1) {
+                            this.ctx.fillStyle = theme.wall;
+                            this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
+                            
+                            // 3D effect bevel
+                            this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                            this.ctx.fillRect(posX, posY + 40, 50, 10);
+                            this.ctx.fillRect(posX + 40, posY, 10, 50);
+
+                            // Decor
+                            if(this.dimension === 1) { // Heaven
+                                this.ctx.fillStyle = '#fff';
+                                this.ctx.beginPath();
+                                this.ctx.arc(posX+25, posY+25, 10, 0, Math.PI*2);
+                                this.ctx.fill();
+                            } else if (this.dimension === 2) { // Hell
+                                this.ctx.fillStyle = '#ff9100';
+                                this.ctx.fillRect(posX+10, posY+10, 10, 20);
+                                this.ctx.fillRect(posX+30, posY+20, 10, 20);
+                            }
+                        }
+
+                        // Grid Lines
+                        this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                        this.ctx.strokeRect(posX, posY, this.tileSize, this.tileSize);
+
+                        // Items
+                        const key = `${x},${y}`;
+                        if (level.items[key] && !level.items[key].collected && tile !== 1) {
+                            const px = posX;
+                            const py = posY;
+                            this.ctx.fillStyle = '#FFD700';
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(px + 25, py + 10);
+                            this.ctx.lineTo(px + 15, py + 40);
+                            this.ctx.lineTo(px + 35, py + 40);
+                            this.ctx.fill();
+                        }
+                    }
+                }
+
+                // Draw Start (Atmospheric Icon: Green Vortex)
+                const sx = this.offsetX + level.start.x * this.tileSize + 25;
+                const sy = this.offsetY + level.start.y * this.tileSize + 25;
+                
+                // Spiral effect
+                this.ctx.strokeStyle = '#00ff00';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                     let r = 5 + i * 6;
+                     this.ctx.arc(sx, sy, r, (Date.now() / 200) + (i * 1.5), (Date.now() / 200) + (i * 1.5) + 4);
+                }
+                this.ctx.stroke();
+
+                // Draw End (Atmospheric Icon: Glowing White Door)
+                const ex = this.offsetX + level.end.x * this.tileSize + 5;
+                const ey = this.offsetY + level.end.y * this.tileSize + 5;
+                
+                // Door Frame
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillRect(ex + 5, ey + 5, 30, 40);
+                
+                // Inner Light
+                this.ctx.fillStyle = '#fff';
+                this.ctx.globalAlpha = 0.8 + Math.sin(Date.now() / 200) * 0.2; // Pulsing light
+                this.ctx.fillRect(ex + 10, ey + 10, 20, 35);
+                this.ctx.globalAlpha = 1.0;
+
+                // Draw Player
+                const px = this.offsetX + this.player.x * this.tileSize;
+                const py = this.offsetY + this.player.y * this.tileSize;
+                
+                this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                this.ctx.beginPath();
+                this.ctx.ellipse(px + 25, py + 42, 12, 5, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = theme.player;
+                this.ctx.fillRect(px + 15, py + 15, 20, 25);
+                
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(px + 18, py + 20, 5, 5);
+                this.ctx.fillRect(px + 27, py + 20, 5, 5);
+
+                if (this.dimension === 1) { // Halo
+                    this.ctx.strokeStyle = '#ffeb3b';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(px + 25, py + 10, 10, 3, 0, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                } else if (this.dimension === 2) { // Horns
+                    this.ctx.fillStyle = '#b71c1c';
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(px+15, py+15);
+                    this.ctx.lineTo(px+10, py+5);
+                    this.ctx.lineTo(px+20, py+15);
+                    this.ctx.fill();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(px+35, py+15);
+                    this.ctx.lineTo(px+40, py+5);
+                    this.ctx.lineTo(px+30, py+15);
+                    this.ctx.fill();
+                }
+
+                // Crush Effect
+                if (this.state === 'gameover') {
+                    this.ctx.strokeStyle = 'red';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(px, py);
+                    this.ctx.lineTo(px + 50, py + 50);
+                    this.ctx.moveTo(px + 50, py);
+                    this.ctx.lineTo(px, py + 50);
+                    this.ctx.stroke();
+                }
+
+                // --- Draw Side Decorations (Pixel Art Fillers) ---
+                // Left Side
+                this.drawSideArt(0, 0, this.offsetX, 600, this.dimension);
+                // Right Side
+                this.drawSideArt(this.offsetX + 500, 0, this.offsetX, 600, this.dimension);
+            }
+
+            drawSideArt(x, y, w, h, dim) {
+                // Simple pattern based on dimension
+                this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                this.ctx.fillRect(x, y, w, h);
+                
+                // Draw some random "pixels" for texture
+                // Note: In a real game, this would be a static image or pattern
+                // We use procedural dots here to avoid lag
+                const color = dim === 1 ? '#81d4fa' : dim === 2 ? '#b71c1c' : '#505050';
+                this.ctx.fillStyle = color;
+                
+                // Use a seeded pseudo-random for stability (simplified here to static blocks)
+                if (dim === 1) { // Heaven: Clouds
+                     this.ctx.globalAlpha = 0.1;
+                     this.ctx.beginPath();
+                     this.ctx.arc(x + w/2, y + 100, 40, 0, Math.PI*2);
+                     this.ctx.arc(x + w/2 - 20, y + 120, 30, 0, Math.PI*2);
+                     this.ctx.fill();
+                     this.ctx.beginPath();
+                     this.ctx.arc(x + w/2, y + 400, 50, 0, Math.PI*2);
+                     this.ctx.fill();
+                     this.ctx.globalAlpha = 1.0;
+                } else if (dim === 2) { // Hell: Spikes
+                     this.ctx.globalAlpha = 0.2;
+                     this.ctx.beginPath();
+                     this.ctx.moveTo(x, y + 600);
+                     this.ctx.lineTo(x + w/2, y + 400);
+                     this.ctx.lineTo(x + w, y + 600);
+                     this.ctx.fill();
+                     this.ctx.globalAlpha = 1.0;
+                } else { // Human: Bars
+                     this.ctx.strokeStyle = '#333';
+                     this.ctx.beginPath();
+                     for(let i=0; i<600; i+=50) {
+                         this.ctx.moveTo(x + 20, i);
+                         this.ctx.lineTo(x + w - 20, i);
+                     }
+                     this.ctx.stroke();
+                }
+            }
+
+            loop() {
+                this.draw();
+                requestAnimationFrame(this.loop);
+            }
+        }
+
+        const game = new Game();
+
+    </script>
+</body>
+</html>
