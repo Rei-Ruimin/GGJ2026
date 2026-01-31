@@ -1,5 +1,6 @@
 import { LEVELS } from './levels.js';
 import { STORY } from './story.js';
+import { AudioManager } from './audio.js';
 
 export class Game {
     constructor() {
@@ -7,6 +8,8 @@ export class Game {
         this.ctx = this.canvas.getContext('2d');
         this.tileSize = 50;
         
+        this.audio = new AudioManager();
+
         // Initialize UI Text
         this.initUI();
 
@@ -20,7 +23,8 @@ export class Game {
         this.player = { x: 0, y: 0, direction: 'front' };
         this.dimension = 0; 
         this.state = 'start'; 
-        
+        this.particles = []; // Particle system
+
         this.colors = {
             0: { bg: '#2c2c2c', wall: '#505050', path: '#3a3a3a', player: '#fff', ambient: '#111' },
             1: { bg: '#e0f7fa', wall: '#81d4fa', path: '#b3e5fc', player: '#ffd700', ambient: '#002f6c' },
@@ -37,6 +41,81 @@ export class Game {
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
     }
+
+    // ... (Existing initUI, loadHeroImages, loadLevelImages methods) ...
+
+    spawnParticles(x, y, count, color, type = 'move') {
+        for (let i = 0; i < count; i++) {
+            this.particles.push({
+                x: x + Math.random() * 40 + 5,
+                y: y + Math.random() * 40 + 5,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                life: 1.0,
+                color: color,
+                type: type
+            });
+        }
+    }
+
+    updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+            if (p.life <= 0) this.particles.splice(i, 1);
+        }
+    }
+
+    drawParticles() {
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life;
+            this.ctx.fillStyle = p.color;
+            if (p.type === 'glitch') {
+                this.ctx.fillRect(p.x, p.y, Math.random() * 10, 2);
+            } else {
+                this.ctx.fillRect(p.x, p.y, 3, 3);
+            }
+        });
+        this.ctx.globalAlpha = 1.0;
+    }
+
+    updateAvatar() {
+        const dimIndex = this.dimension + 1; // 1, 2, 3
+        const avatarImg = document.getElementById('avatar-img');
+        // Use the front-facing sprite as avatar
+        // Fallback to empty if not loaded yet, though load happens early
+        avatarImg.src = `assets/hero/filter${dimIndex}front.png`;
+    }
+
+    triggerShake() {
+        const container = document.getElementById('game-container');
+        container.classList.remove('shake');
+        void container.offsetWidth; // Trigger reflow
+        container.classList.add('shake');
+    }
+
+    showDialog(text) {
+        this.state = 'dialog';
+        const box = document.getElementById('dialog-box');
+        const content = document.getElementById('dialog-text');
+        box.style.display = 'block';
+        content.innerText = ""; // Clear existing
+
+        let index = 0;
+        if (this.typewriterInterval) clearInterval(this.typewriterInterval);
+
+        this.typewriterInterval = setInterval(() => {
+            content.innerText += text.charAt(index);
+            index++;
+            if (index >= text.length) {
+                clearInterval(this.typewriterInterval);
+            }
+        }, 30); // Speed of typing
+    }
+
+    // ... (rest of methods)
 
     initUI() {
         // Start Screen
@@ -121,12 +200,19 @@ export class Game {
         this.player = { ...level.start, direction: 'front' };
         this.dimension = 0;
         this.state = 'playing';
+        this.particles = []; // Clear particles
         
+        // Audio Init
+        this.audio.init().then(() => {
+            this.audio.fadeBGM(0);
+        });
+
         for(let key in level.items) level.items[key].collected = false;
 
         document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
         document.getElementById('level-display').innerText = level.name.toUpperCase();
         this.updateMaskUI();
+        this.updateHUD();
         
         if (idx === 0) {
             this.showDialog(STORY.dialogs.intro);
@@ -150,11 +236,25 @@ export class Game {
         const newY = this.player.y + dy;
         const level = LEVELS[this.currentLevelIdx];
 
-        if (newX < 0 || newX >= 10 || newY < 0 || newY >= 10) return;
-        if (level.maps[this.dimension][newY][newX] === 1) return;
+        if (newX < 0 || newX >= 10 || newY < 0 || newY >= 10) {
+            this.audio.playBump();
+            return;
+        }
+        if (level.maps[this.dimension][newY][newX] === 1) {
+            this.audio.playBump();
+            return;
+        }
 
         this.player.x = newX;
         this.player.y = newY;
+        
+        this.audio.playFlap();
+        
+        // Spawn movement particles
+        const px = this.offsetX + this.player.x * this.tileSize;
+        const py = this.offsetY + this.player.y * this.tileSize;
+        this.spawnParticles(px, py, 5, '#fff', 'move');
+
         this.checkTileEvents();
     }
 
@@ -165,17 +265,30 @@ export class Game {
         const level = LEVELS[this.currentLevelIdx];
         if (level.lockedDimensions[newDim]) return;
 
+        // Spawn glitch particles before switch
+        const px = this.offsetX + this.player.x * this.tileSize;
+        const py = this.offsetY + this.player.y * this.tileSize;
+        
+        let glitchColor = '#fff';
+        if (newDim === 0) glitchColor = '#aaaaaa'; // Human
+        if (newDim === 1) glitchColor = '#00ffff'; // Heaven
+        if (newDim === 2) glitchColor = '#ff4400'; // Hell
+        
+        this.spawnParticles(px, py, 20, glitchColor, 'glitch');
+
         // 安全检测：是否在出生点
         const isAtStart = this.player.x === level.start.x && this.player.y === level.start.y;
 
         // 碰撞逻辑：如果不在出生点，且目标维度当前位置是墙，则死亡
         if (!isAtStart && level.maps[newDim][this.player.y][this.player.x] === 1) {
             this.dimension = newDim; 
+            this.triggerShake();
             this.die(STORY.dialogs.deathOverlap);
             return;
         }
 
         this.dimension = newDim;
+        this.audio.fadeBGM(newDim);
         this.updateMaskUI();
         
         this.canvas.style.filter = 'contrast(1.5) brightness(1.2)';
@@ -214,12 +327,18 @@ export class Game {
 
     die(reason) {
         this.state = 'gameover';
+        this.audio.playZap();
+        setTimeout(() => this.audio.stopAll(), 100); // Slight delay to ensure zap starts
+
         document.getElementById('death-reason').innerText = reason;
         document.getElementById('game-over-screen').classList.remove('hidden');
     }
 
     victory() {
         this.state = 'victory';
+        this.audio.playZap();
+        setTimeout(() => this.audio.stopAll(), 100);
+
         document.getElementById('victory-screen').classList.remove('hidden');
     }
 
@@ -376,20 +495,36 @@ export class Game {
             const sprite = heroSet[dir];
             
             if (sprite && sprite.complete) {
-                // Draw sprite
-                // Assuming sprite is square-ish or needs to fit in tile. 
-                // If sprite is taller, we might want to offset Y upwards.
-                // For now, drawing it to fill the tile 50x50.
                 this.ctx.drawImage(sprite, px, py, this.tileSize, this.tileSize);
             } else {
-                // Fallback if image not loaded yet
                 this.ctx.fillStyle = theme.player;
                 this.ctx.fillRect(px + 10, py + 10, 30, 30);
             }
         } else {
-             // Fallback if assets logic fails
              this.ctx.fillStyle = theme.player;
              this.ctx.fillRect(px + 15, py + 15, 20, 25);
+        }
+
+        // Draw Particles
+        this.drawParticles();
+
+        // Lighting / Fog of War Overlay
+        // Dim 0 (Human): Dark, seeking light
+        // Dim 1 (Heaven): Bright, no fog
+        // Dim 2 (Hell): Reddish gloom
+        let fogColor = null;
+        if (this.dimension === 0) fogColor = 'rgba(0,0,0,0.85)';
+        if (this.dimension === 2) fogColor = 'rgba(20,0,0,0.6)';
+
+        if (fogColor) {
+            const centerX = px + this.tileSize / 2;
+            const centerY = py + this.tileSize / 2;
+            const gradient = this.ctx.createRadialGradient(centerX, centerY, 60, centerX, centerY, 400);
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, fogColor);
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
         // Crush Effect
@@ -417,8 +552,6 @@ export class Game {
         this.ctx.fillRect(x, y, w, h);
         
         // Draw some random "pixels" for texture
-        // Note: In a real game, this would be a static image or pattern
-        // We use procedural dots here to avoid lag
         const color = dim === 1 ? '#81d4fa' : dim === 2 ? '#b71c1c' : '#505050';
         this.ctx.fillStyle = color;
         
@@ -453,6 +586,7 @@ export class Game {
     }
 
     loop() {
+        this.updateParticles();
         this.draw();
         requestAnimationFrame(this.loop);
     }

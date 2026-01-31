@@ -59,6 +59,7 @@ canvas {
     font-size: 14px;
     text-shadow: 2px 2px 0 #000;
     z-index: 2;
+    align-items: center;
 }
 
 /* Bottom Controls */
@@ -134,6 +135,7 @@ canvas {
     line-height: 1.6;
     margin-bottom: 15px;
     color: #fff;
+    min-height: 48px; /* Fixed height to prevent jumpiness */
 }
 
 #dialog-next {
@@ -189,6 +191,17 @@ button.start-btn:hover { background: #ddd; transform: scale(1.05); }
     pointer-events: none;
     z-index: 10;
     opacity: 0.6;
+}
+
+.shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-4px, 0, 0); }
+  20%, 80% { transform: translate3d(6px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+  40%, 60% { transform: translate3d(8px, 0, 0); }
 }
 
 @keyframes blink { 50% { opacity: 0; } }
