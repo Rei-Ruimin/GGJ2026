@@ -6,6 +6,7 @@ export class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = false;
         this.tileSize = 50;
         
         this.audio = new AudioManager();
@@ -402,10 +403,6 @@ export class Game {
                         this.ctx.fillRect(posX + 40, posY, 10, 50);
                     }
                 }
-
-                // Grid Lines
-                this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                this.ctx.strokeRect(posX, posY, this.tileSize, this.tileSize);
 
                 // Items
                 const key = `${x},${y}`;
