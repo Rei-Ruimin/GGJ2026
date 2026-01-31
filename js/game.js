@@ -1,4 +1,5 @@
 import { LEVELS } from './levels.js';
+import { STORY } from './story.js';
 
 export class Game {
     constructor() {
@@ -6,6 +7,9 @@ export class Game {
         this.ctx = this.canvas.getContext('2d');
         this.tileSize = 50;
         
+        // Initialize UI Text
+        this.initUI();
+
         // Landscape settings
         this.gridW = 500;
         this.gridH = 500;
@@ -32,6 +36,26 @@ export class Game {
         this.bindInput();
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
+    }
+
+    initUI() {
+        // Start Screen
+        const startScreen = document.querySelector('#start-screen');
+        startScreen.querySelector('h1').innerHTML = `${STORY.title}<br><span style="font-size:18px; color:#888;">${STORY.subtitle}</span>`;
+        startScreen.querySelector('p').innerHTML = STORY.startScreen.description;
+        startScreen.querySelector('button').innerText = STORY.startScreen.button;
+
+        // Game Over Screen
+        const gameOverScreen = document.querySelector('#game-over-screen');
+        gameOverScreen.querySelector('h1').innerText = STORY.gameOver.title;
+        gameOverScreen.querySelector('#death-reason').innerText = STORY.gameOver.defaultReason;
+        gameOverScreen.querySelector('button').innerText = STORY.gameOver.button;
+
+        // Victory Screen
+        const victoryScreen = document.querySelector('#victory-screen');
+        victoryScreen.querySelector('h1').innerText = STORY.victory.title;
+        victoryScreen.querySelector('div').innerHTML = STORY.victory.content;
+        victoryScreen.querySelector('button').innerText = STORY.victory.button;
     }
 
     loadHeroImages() {
@@ -105,7 +129,7 @@ export class Game {
         this.updateMaskUI();
         
         if (idx === 0) {
-            this.showDialog("主角：头好痛……这是哪？");
+            this.showDialog(STORY.dialogs.intro);
         }
     }
 
@@ -147,7 +171,7 @@ export class Game {
         // 碰撞逻辑：如果不在出生点，且目标维度当前位置是墙，则死亡
         if (!isAtStart && level.maps[newDim][this.player.y][this.player.x] === 1) {
             this.dimension = newDim; 
-            this.die("空间重叠：你的身体卡在了墙里。");
+            this.die(STORY.dialogs.deathOverlap);
             return;
         }
 
@@ -279,33 +303,59 @@ export class Game {
             }
         }
 
-        // Draw Start (Atmospheric Icon: Green Vortex)
+        // Draw Start (Atmospheric Icon: Faint Awakening Pulse)
         const sx = this.offsetX + level.start.x * this.tileSize + 25;
         const sy = this.offsetY + level.start.y * this.tileSize + 25;
         
-        // Spiral effect
-        this.ctx.strokeStyle = '#00ff00';
-        this.ctx.lineWidth = 3;
+        // Pulse effect
+        this.ctx.strokeStyle = '#aaa';
+        this.ctx.lineWidth = 2;
         this.ctx.beginPath();
-        for (let i = 0; i < 3; i++) {
-                let r = 5 + i * 6;
-                this.ctx.arc(sx, sy, r, (Date.now() / 200) + (i * 1.5), (Date.now() / 200) + (i * 1.5) + 4);
+        const time = Date.now() / 1000;
+        const radius = 10 + Math.sin(time * 2) * 2;
+        this.ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        // Inner weak light
+        this.ctx.fillStyle = '#fff';
+        this.ctx.globalAlpha = 0.3 + Math.sin(time * 3) * 0.1;
+        this.ctx.beginPath();
+        this.ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.globalAlpha = 1.0;
+
+        // Draw End (Atmospheric Icon: The "Ultimate Light" / Bug Zapper)
+        const ex = this.offsetX + level.end.x * this.tileSize;
+        const ey = this.offsetY + level.end.y * this.tileSize;
+        
+        // Zapper Grid (Metal bars)
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(ex + 10, ey + 5, 30, 40);
+        this.ctx.strokeStyle = '#333';
+        this.ctx.beginPath();
+        for(let i=0; i<=30; i+=6) {
+             this.ctx.moveTo(ex + 10 + i, ey + 5);
+             this.ctx.lineTo(ex + 10 + i, ey + 45);
         }
         this.ctx.stroke();
 
-        // Draw End (Atmospheric Icon: Glowing White Door)
-        const ex = this.offsetX + level.end.x * this.tileSize + 5;
-        const ey = this.offsetY + level.end.y * this.tileSize + 5;
-        
-        // Door Frame
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(ex + 5, ey + 5, 30, 40);
-        
-        // Inner Light
-        this.ctx.fillStyle = '#fff';
-        this.ctx.globalAlpha = 0.8 + Math.sin(Date.now() / 200) * 0.2; // Pulsing light
-        this.ctx.fillRect(ex + 10, ey + 10, 20, 35);
-        this.ctx.globalAlpha = 1.0;
+        // The "Deadly" Glow (Purple/Blue)
+        const glowIntensity = 0.5 + Math.random() * 0.5; // Flickering
+        this.ctx.shadowBlur = 20;
+        this.ctx.shadowColor = '#b388ff';
+        this.ctx.fillStyle = `rgba(130, 224, 255, ${glowIntensity})`;
+        this.ctx.fillRect(ex + 12, ey + 10, 26, 30);
+        this.ctx.shadowBlur = 0;
+
+        // Electric Arcs (Random zaps)
+        if (Math.random() > 0.8) {
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(ex + 10 + Math.random()*30, ey + 5 + Math.random()*40);
+            this.ctx.lineTo(ex + 10 + Math.random()*30, ey + 5 + Math.random()*40);
+            this.ctx.stroke();
+        }
 
         // Draw Player
         const px = this.offsetX + this.player.x * this.tileSize;

@@ -1,3 +1,5 @@
+import { STORY } from './story.js';
+
 // --- Game Maps ---
 // 0: Path, 1: Wall, 2: Item
 
@@ -91,30 +93,30 @@ const LV3_HELL = [
 
 export const LEVELS = [
     {
-        name: "Level 1: 宿醉之始",
+        name: STORY.levels[0].name,
         lockedDimensions: [false, true, true],
         start: {x: 0, y: 0},
         end: {x: 9, y: 9},
         maps: [LV1_HUMAN, ALL_WALLS, ALL_WALLS],
-        items: { '4,4': { text: "主角：这杯 1982 年的香槟……味道怎么有点像止咳糖浆？", collected: false } }
+        items: { '4,4': { text: STORY.levels[0].items['4,4'], collected: false } }
     },
     {
-        name: "Level 2: 天使的邀约",
+        name: STORY.levels[1].name,
         lockedDimensions: [false, false, true],
         start: {x: 0, y: 0},
         end: {x: 9, y: 9},
         maps: [LV2_HUMAN, LV2_HEAVEN, ALL_WALLS],
-        items: { '5,3': { text: "主角：好漂亮的羽毛……等等，这真的是天使的羽毛吗？还是只是鹅毛笔？", collected: false } }
+        items: { '5,3': { text: STORY.levels[1].items['5,3'], collected: false } }
     },
     {
-        name: "Level 3: 终极派对",
+        name: STORY.levels[2].name,
         lockedDimensions: [false, false, false],
         start: {x: 0, y: 0},
         end: {x: 9, y: 9},
         maps: [LV3_HUMAN, LV3_HEAVEN, LV3_HELL],
         items: {
-            '2,4': { text: "金色面具： “这面具勒得我太阳穴疼……可能这就是我看见地狱的原因。”", collected: false },
-            '5,6': { text: "喷泉池： “水声越来越近了……我得在被淹死之前醒过来！”", collected: false }
+            '2,4': { text: STORY.levels[2].items['2,4'], collected: false },
+            '5,6': { text: STORY.levels[2].items['5,6'], collected: false }
         }
     }
 ];
