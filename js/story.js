@@ -1,8 +1,8 @@
 export const STORY = {
-    title: "飞蛾扑火的浪漫",
+    title: "浪漫主义者的殉道",
     subtitle: "A Romantic Pursuit",
     startScreen: {
-        description: "GGJ 2026 Submission<br><br>我是一位追求极致光明的艺术家。<br>在这个沉睡的巨大国度中，我正进行一场伟大的远征。<br><br>我的灵魂在三个不同的位面中跳跃：<br>混乱的现实、圣洁的高天、以及致命的深渊。<br><br>注意：<br>如果你切换到的世界在该位置有障碍物，<br>你的肉身将因无法承载空间的重叠而毁灭。",
+        description: "我是一位追求极致光明的艺术家。<br>在这个沉睡的巨大国度中，我正进行一场伟大的远征。<br><br>我的灵魂在三个不同的位面中跳跃：<br>混乱的现实、圣洁的高天、以及致命的深渊。<br><br>注意：<br>如果你切换到的世界在该位置有障碍物，<br>你的肉身将因无法承载空间的重叠而毁灭。",
         button: "开启远征 (Start)"
     },
     gameOver: {
