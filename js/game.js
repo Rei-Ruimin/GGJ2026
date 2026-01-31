@@ -13,7 +13,7 @@ export class Game {
         this.offsetY = (600 - 500) / 2 + 10; // Center vertically with slight offset
         
         this.currentLevelIdx = 0;
-        this.player = { x: 0, y: 0 };
+        this.player = { x: 0, y: 0, direction: 'front' };
         this.dimension = 0; 
         this.state = 'start'; 
         
@@ -23,9 +23,51 @@ export class Game {
             2: { bg: '#210000', wall: '#b71c1c', path: '#4a0000', player: '#ff3d00', ambient: '#1a0000' }
         };
 
+        this.heroImages = {};
+        this.loadHeroImages();
+
+        this.levelImages = {};
+        this.loadLevelImages();
+
         this.bindInput();
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
+    }
+
+    loadHeroImages() {
+        const directions = ['front', 'back', 'left', 'right', 'shadow'];
+        for (let dim = 1; dim <= 3; dim++) {
+            this.heroImages[dim] = {};
+            directions.forEach(dir => {
+                const img = new Image();
+                img.src = `assets/hero/filter${dim}${dir}.png`;
+                this.heroImages[dim][dir] = img;
+            });
+        }
+    }
+
+    loadLevelImages() {
+        // Dim 0: Human -> bg1, 1book
+        // Dim 1: Heaven -> bg2, 2cloud
+        // Dim 2: Hell -> bg3, 3lava
+        const assets = [
+            { bg: 'bg1.png', wall: '1book.png' },
+            { bg: 'bg2.png', wall: '2cloud.png' },
+            { bg: 'bg3.png', wall: '3lava.png' }
+        ];
+
+        assets.forEach((asset, idx) => {
+            const dim = idx; // 0, 1, 2
+            this.levelImages[dim] = {};
+            
+            const bgImg = new Image();
+            bgImg.src = `assets/level/${asset.bg}`;
+            this.levelImages[dim].bg = bgImg;
+
+            const wallImg = new Image();
+            wallImg.src = `assets/level/${asset.wall}`;
+            this.levelImages[dim].wall = wallImg;
+        });
     }
 
     bindInput() {
@@ -52,7 +94,7 @@ export class Game {
     startLevel(idx) {
         this.currentLevelIdx = idx;
         const level = LEVELS[this.currentLevelIdx];
-        this.player = { ...level.start };
+        this.player = { ...level.start, direction: 'front' };
         this.dimension = 0;
         this.state = 'playing';
         
@@ -73,6 +115,12 @@ export class Game {
 
     move(dx, dy) {
         if (this.state !== 'playing') return;
+
+        // Update direction
+        if (dy < 0) this.player.direction = 'back';
+        if (dy > 0) this.player.direction = 'front';
+        if (dx < 0) this.player.direction = 'left';
+        if (dx > 0) this.player.direction = 'right';
 
         const newX = this.player.x + dx;
         const newY = this.player.y + dy;
@@ -174,6 +222,9 @@ export class Game {
 
         const level = LEVELS[this.currentLevelIdx];
         const map = level.maps[this.dimension];
+        
+        // Get current dimension assets
+        const levelAssets = this.levelImages[this.dimension];
 
         // --- Draw Grid Background (The Play Area) ---
         this.ctx.fillStyle = '#000'; // Border for grid
@@ -186,30 +237,26 @@ export class Game {
                 const posX = this.offsetX + x * this.tileSize;
                 const posY = this.offsetY + y * this.tileSize;
 
-                // Floor
-                this.ctx.fillStyle = theme.path;
-                this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
+                // Floor (Always draw floor background for tiles)
+                if (levelAssets && levelAssets.bg && levelAssets.bg.complete) {
+                     this.ctx.drawImage(levelAssets.bg, posX, posY, this.tileSize, this.tileSize);
+                } else {
+                     this.ctx.fillStyle = theme.path;
+                     this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
+                }
 
                 // Walls
                 if (tile === 1) {
-                    this.ctx.fillStyle = theme.wall;
-                    this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
-                    
-                    // 3D effect bevel
-                    this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                    this.ctx.fillRect(posX, posY + 40, 50, 10);
-                    this.ctx.fillRect(posX + 40, posY, 10, 50);
-
-                    // Decor
-                    if(this.dimension === 1) { // Heaven
-                        this.ctx.fillStyle = '#fff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(posX+25, posY+25, 10, 0, Math.PI*2);
-                        this.ctx.fill();
-                    } else if (this.dimension === 2) { // Hell
-                        this.ctx.fillStyle = '#ff9100';
-                        this.ctx.fillRect(posX+10, posY+10, 10, 20);
-                        this.ctx.fillRect(posX+30, posY+20, 10, 20);
+                    if (levelAssets && levelAssets.wall && levelAssets.wall.complete) {
+                        this.ctx.drawImage(levelAssets.wall, posX, posY, this.tileSize, this.tileSize);
+                    } else {
+                        this.ctx.fillStyle = theme.wall;
+                        this.ctx.fillRect(posX, posY, this.tileSize, this.tileSize);
+                        
+                        // 3D effect bevel (Legacy fallback)
+                        this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                        this.ctx.fillRect(posX, posY + 40, 50, 10);
+                        this.ctx.fillRect(posX + 40, posY, 10, 50);
                     }
                 }
 
@@ -264,36 +311,35 @@ export class Game {
         const px = this.offsetX + this.player.x * this.tileSize;
         const py = this.offsetY + this.player.y * this.tileSize;
         
-        this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        this.ctx.beginPath();
-        this.ctx.ellipse(px + 25, py + 42, 12, 5, 0, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Get correct image set based on dimension (1-based index for assets)
+        const dimIndex = this.dimension + 1;
+        const heroSet = this.heroImages[dimIndex];
 
-        this.ctx.fillStyle = theme.player;
-        this.ctx.fillRect(px + 15, py + 15, 20, 25);
-        
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(px + 18, py + 20, 5, 5);
-        this.ctx.fillRect(px + 27, py + 20, 5, 5);
-
-        if (this.dimension === 1) { // Halo
-            this.ctx.strokeStyle = '#ffeb3b';
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.ellipse(px + 25, py + 10, 10, 3, 0, 0, Math.PI * 2);
-            this.ctx.stroke();
-        } else if (this.dimension === 2) { // Horns
-            this.ctx.fillStyle = '#b71c1c';
-            this.ctx.beginPath();
-            this.ctx.moveTo(px+15, py+15);
-            this.ctx.lineTo(px+10, py+5);
-            this.ctx.lineTo(px+20, py+15);
-            this.ctx.fill();
-            this.ctx.beginPath();
-            this.ctx.moveTo(px+35, py+15);
-            this.ctx.lineTo(px+40, py+5);
-            this.ctx.lineTo(px+30, py+15);
-            this.ctx.fill();
+        if (heroSet) {
+            // Draw Shadow
+            if (heroSet.shadow && heroSet.shadow.complete) {
+                this.ctx.drawImage(heroSet.shadow, px, py, this.tileSize, this.tileSize);
+            }
+            
+            // Draw Character
+            const dir = this.player.direction || 'front';
+            const sprite = heroSet[dir];
+            
+            if (sprite && sprite.complete) {
+                // Draw sprite
+                // Assuming sprite is square-ish or needs to fit in tile. 
+                // If sprite is taller, we might want to offset Y upwards.
+                // For now, drawing it to fill the tile 50x50.
+                this.ctx.drawImage(sprite, px, py, this.tileSize, this.tileSize);
+            } else {
+                // Fallback if image not loaded yet
+                this.ctx.fillStyle = theme.player;
+                this.ctx.fillRect(px + 10, py + 10, 30, 30);
+            }
+        } else {
+             // Fallback if assets logic fails
+             this.ctx.fillStyle = theme.player;
+             this.ctx.fillRect(px + 15, py + 15, 20, 25);
         }
 
         // Crush Effect

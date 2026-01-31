@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap');
 
 :root {
     --bg-color: #121212;
@@ -11,7 +11,7 @@
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: 'Press Start 2P', cursive;
+    font-family: 'Press Start 2P', 'DotGothic16', monospace;
     display: flex;
     flex-direction: column;
     align-items: center;
