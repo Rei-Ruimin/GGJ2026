@@ -2,12 +2,13 @@
 
 > *"In that slumbering realm of giants, I saw a sun. It was the ultimate truth, a holy sanctuary of warmth."*
 
-**A Romantic Pursuit** is a surreal pixel-art puzzle game developed for **Global Game Jam 2026**. You play as an "artist" (a moth) seeking the ultimate light, embarking on a great expedition across three overlapping dimensions.
+**A Romantic Pursuit** is a surreal pixel-art puzzle game developed for **Global Game Jam 2026** in Chinese. You play as an "artist" (a moth) seeking the ultimate light, embarking on a great expedition across three overlapping dimensions.
 
 ![Status](https://img.shields.io/github/actions/workflow/status/Rei-Ruimin/ggj2026/deploy.yml?label=build)
 
 ## 🎮 Play Online
 [**Click here to play the game!**](https://rei-ruimin.github.io/GGJ2026/)  
+
 
 ## ✨ Features
 
