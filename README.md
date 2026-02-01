@@ -4,11 +4,10 @@
 
 **A Romantic Pursuit** is a surreal pixel-art puzzle game developed for **Global Game Jam 2026**. You play as an "artist" (a moth) seeking the ultimate light, embarking on a great expedition across three overlapping dimensions.
 
-![Status](https://img.shields.io/github/actions/workflow/status/Rei/ggj2026/deploy.yml?label=build)
+![Status](https://img.shields.io/github/actions/workflow/status/Rei-Ruimin/ggj2026/deploy.yml?label=build)
 
 ## 🎮 Play Online
-[**Click here to play the game!**](https://rei.github.io/ggj2026/)  
-*(Note: Replace `Rei` and `ggj2026` with your actual GitHub username and repo name if different)*
+[**Click here to play the game!**](https://rei-ruimin.github.io/GGJ2026/)  
 
 ## ✨ Features
 
