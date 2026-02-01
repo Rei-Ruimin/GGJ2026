@@ -109,6 +109,7 @@ canvas {
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+    /* color: transparent; Hide any text if present */
     font-family: inherit;
     font-size: var(--fs-mask);
     cursor: pointer;
@@ -118,13 +119,16 @@ canvas {
     transition: all 0.2s;
     position: relative;
     border-radius: 0;
+    filter: grayscale(20%);
+    opacity: 0.7;
 }
 
-.mask-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+.mask-btn:hover { transform: translateY(-2px); filter: brightness(1.2) grayscale(0%); opacity: 1; }
 .mask-btn.active {
     transform: translateY(-8px);
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)) grayscale(0%);
     z-index: 10;
+    opacity: 0.9;
 }
 
 /* Dimension Specific Styles with Images */
