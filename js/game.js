@@ -38,6 +38,10 @@ export class Game {
 
         this.levelImages = {};
         this.loadLevelImages();
+        
+        this.itemImages = {};
+        this.bulbImage = new Image();
+        this.loadItemImages();
 
         this.bindInput();
         this.loop = this.loop.bind(this);
@@ -85,12 +89,21 @@ export class Game {
         this.shakeIntensity = 20;
     }
 
-    showDialog(text) {
+    showDialog(text, imageSrc = null) {
         this.state = 'dialog';
         const box = document.getElementById('dialog-box');
         const content = document.getElementById('dialog-text');
+        const itemImg = document.getElementById('dialog-item-img');
+        
         box.style.display = 'block';
         content.innerText = ""; // Clear existing
+
+        if (imageSrc) {
+            itemImg.src = `assets/level/items/${imageSrc}`;
+            itemImg.style.display = 'block';
+        } else {
+            itemImg.style.display = 'none';
+        }
 
         let index = 0;
         if (this.typewriterInterval) clearInterval(this.typewriterInterval);
@@ -102,6 +115,12 @@ export class Game {
                 clearInterval(this.typewriterInterval);
             }
         }, 30); // Speed of typing
+    }
+
+    advanceDialog() {
+        document.getElementById('dialog-box').style.display = 'none';
+        document.getElementById('dialog-item-img').style.display = 'none';
+        this.state = 'playing';
     }
 
     initUI() {
@@ -158,6 +177,16 @@ export class Game {
             wallImg.src = `assets/level/${asset.wall}`;
             this.levelImages[dim].wall = wallImg;
         });
+    }
+
+    loadItemImages() {
+        const items = ['1cola.png', '2dim.png', '3wings.png', '4flash.png'];
+        items.forEach((item) => {
+            const img = new Image();
+            img.src = `assets/level/items/${item}`;
+            this.itemImages[item] = img;
+        });
+        this.bulbImage.src = 'assets/level/items/bulb.png';
     }
 
     bindInput() {
@@ -329,7 +358,7 @@ export class Game {
         const key = `${this.player.x},${this.player.y}`;
         if ((tileType === 2 || level.items[key]) && level.items[key] && !level.items[key].collected) {
             level.items[key].collected = true;
-            this.showDialog(level.items[key].text);
+            this.showDialog(level.items[key].text, level.items[key].image);
         }
     }
 
@@ -431,12 +460,21 @@ export class Game {
                 if (level.items[key] && !level.items[key].collected && tile !== 1) {
                     const px = posX;
                     const py = posY;
-                    this.ctx.fillStyle = '#FFD700';
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(px + 25, py + 10);
-                    this.ctx.lineTo(px + 15, py + 40);
-                    this.ctx.lineTo(px + 35, py + 40);
-                    this.ctx.fill();
+                    
+                    const itemData = level.items[key];
+                    const itemImg = this.itemImages[itemData.image];
+                    
+                    if (itemImg && itemImg.complete) {
+                        this.ctx.drawImage(itemImg, px + 5, py + 5, 40, 40);
+                    } else {
+                        // Fallback
+                        this.ctx.fillStyle = '#FFD700';
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(px + 25, py + 10);
+                        this.ctx.lineTo(px + 15, py + 40);
+                        this.ctx.lineTo(px + 35, py + 40);
+                        this.ctx.fill();
+                    }
                 }
             }
         }
@@ -460,34 +498,26 @@ export class Game {
         this.ctx.fill();
         this.ctx.globalAlpha = 1.0;
 
-        // Draw End
+        // Draw End (Bulb)
         const ex = this.offsetX + level.end.x * this.tileSize;
         const ey = this.offsetY + level.end.y * this.tileSize;
         
-        this.ctx.fillStyle = '#111';
-        this.ctx.fillRect(ex + 10, ey + 5, 30, 40);
-        this.ctx.strokeStyle = '#333';
-        this.ctx.beginPath();
-        for(let i=0; i<=30; i+=6) {
-             this.ctx.moveTo(ex + 10 + i, ey + 5);
-             this.ctx.lineTo(ex + 10 + i, ey + 45);
-        }
-        this.ctx.stroke();
-
-        const glowIntensity = 0.5 + Math.random() * 0.5;
-        this.ctx.shadowBlur = 20;
-        this.ctx.shadowColor = '#b388ff';
-        this.ctx.fillStyle = `rgba(130, 224, 255, ${glowIntensity})`;
-        this.ctx.fillRect(ex + 12, ey + 10, 26, 30);
-        this.ctx.shadowBlur = 0;
-
-        if (Math.random() > 0.8) {
-            this.ctx.strokeStyle = '#fff';
-            this.ctx.lineWidth = 1;
-            this.ctx.beginPath();
-            this.ctx.moveTo(ex + 10 + Math.random()*30, ey + 5 + Math.random()*40);
-            this.ctx.lineTo(ex + 10 + Math.random()*30, ey + 5 + Math.random()*40);
-            this.ctx.stroke();
+        if (this.bulbImage && this.bulbImage.complete) {
+             this.ctx.drawImage(this.bulbImage, ex, ey, this.tileSize, this.tileSize);
+             
+             // Add glow behind bulb
+             const glowIntensity = 0.5 + Math.random() * 0.5;
+             this.ctx.globalCompositeOperation = 'screen';
+             this.ctx.shadowBlur = 20;
+             this.ctx.shadowColor = '#ffff00';
+             this.ctx.fillStyle = `rgba(255, 255, 0, ${glowIntensity * 0.3})`;
+             this.ctx.fillRect(ex + 10, ey + 10, 30, 30);
+             this.ctx.shadowBlur = 0;
+             this.ctx.globalCompositeOperation = 'source-over';
+        } else {
+            // Fallback
+            this.ctx.fillStyle = '#111';
+            this.ctx.fillRect(ex + 10, ey + 5, 30, 40);
         }
 
         // Draw Player

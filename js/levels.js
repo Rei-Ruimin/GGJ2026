@@ -142,7 +142,7 @@ export const LEVELS = [
         start: {x: 0, y: 0},
         end: {x: 9, y: 9},
         maps: [LV1_HUMAN, LV1_WALLS, LV1_WALLS],
-        items: { '4,4': { text: STORY.levels[0].items['4,4'], collected: false } }
+        items: { '4,4': { ...STORY.levels[0].items['4,4'], collected: false } }
     },
     {
         name: STORY.levels[1].name,
@@ -150,7 +150,7 @@ export const LEVELS = [
         start: {x: 0, y: 0},
         end: {x: 9, y: 9},
         maps: [LV2_HUMAN, LV2_HEAVEN, LV2_WALLS],
-        items: { '5,3': { text: STORY.levels[1].items['5,3'], collected: false } }
+        items: { '5,3': { ...STORY.levels[1].items['5,3'], collected: false } }
     },
     {
         name: STORY.levels[2].name,
@@ -159,8 +159,8 @@ export const LEVELS = [
         end: {x: 9, y: 9},
         maps: [LV3_HUMAN, LV3_HEAVEN, LV3_HELL], // Map order: Human, Heaven, Hell (Index 0, 1, 2)
         items: {
-            '2,4': { text: STORY.levels[2].items['2,4'], collected: false },
-            '5,6': { text: STORY.levels[2].items['5,6'], collected: false }
+            '2,4': { ...STORY.levels[2].items['2,4'], collected: false },
+            '5,6': { ...STORY.levels[2].items['5,6'], collected: false }
         }
     }
 ];
