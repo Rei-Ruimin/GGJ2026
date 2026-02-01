@@ -6,6 +6,26 @@
     --human-accent: #a8a8a8;
     --heaven-accent: #81d4fa;
     --hell-accent: #ff6f00;
+
+    /* Default Font Sizes (Chinese) */
+    --fs-h1: 32px;
+    --fs-p: 14px;
+    --fs-hud: 14px;
+    --fs-btn: 20px;
+    --fs-mask: 24px;
+    --fs-dialog: 14px;
+    --fs-hint: 12px;
+}
+
+/* Language Specific Overrides */
+body.lang-en {
+    --fs-h1: 24px;
+    --fs-p: 10px;
+    --fs-hud: 10px;
+    --fs-btn: 16px;
+    --fs-mask: 18px;
+    --fs-dialog: 11px;
+    --fs-hint: 9px;
 }
 
 body {
@@ -60,7 +80,7 @@ canvas {
     width: 480px; /* Match grid width roughly */
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
+    font-size: var(--fs-hud);
     text-shadow: 2px 2px 0 #000;
     z-index: 2;
     align-items: center;
@@ -85,7 +105,7 @@ canvas {
     background: #222;
     color: white;
     font-family: inherit;
-    font-size: 24px;
+    font-size: var(--fs-mask);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -135,11 +155,13 @@ canvas {
 }
 
 #dialog-text {
-    font-size: 14px;
+    font-size: var(--fs-dialog);
     line-height: 1.6;
     margin-bottom: 15px;
     color: #fff;
     min-height: 48px; /* Fixed height to prevent jumpiness */
+    white-space: pre-wrap; /* Preserve whitespace and wrap text */
+    word-wrap: break-word; /* Ensure long words break */
 }
 
 #dialog-avatar {
@@ -171,7 +193,7 @@ canvas {
 
 #dialog-next {
     float: right;
-    font-size: 12px;
+    font-size: calc(var(--fs-dialog) - 2px);
     color: #ffff00;
     cursor: pointer;
     animation: blink 1s infinite;
@@ -196,13 +218,13 @@ canvas {
 
 .hidden { display: none !important; }
 
-h1 { font-size: 32px; color: #fff; margin-bottom: 30px; line-height: 1.4; text-transform: uppercase; letter-spacing: 2px; }
-p { font-size: 14px; color: #ccc; margin-bottom: 40px; max-width: 600px; line-height: 1.8; }
+h1 { font-size: var(--fs-h1); color: #fff; margin-bottom: 30px; line-height: 1.4; text-transform: uppercase; letter-spacing: 2px; }
+p { font-size: var(--fs-p); color: #ccc; margin-bottom: 40px; max-width: 600px; line-height: 1.8; }
 
 button.start-btn {
     padding: 20px 40px;
     font-family: inherit;
-    font-size: 20px;
+    font-size: var(--fs-btn);
     background: #fff;
     border: 4px solid #888;
     cursor: pointer;
@@ -243,11 +265,32 @@ button.start-btn:hover { background: #ddd; transform: scale(1.05); }
     width: 100%;
     color: #fff;
     padding: 15px 0;
-    font-size: 12px;
+    font-size: var(--fs-hint);
     text-align: center;
     background: rgba(0, 0, 0, 0.6);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 5;
     letter-spacing: 1px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: 2px solid #555;
+    color: #888;
+    padding: 5px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 12px;
+}
+.lang-btn.active {
+    border-color: #fff;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+.lang-btn:hover {
+    border-color: #aaa;
+    color: #aaa;
 }

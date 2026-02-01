@@ -1,5 +1,5 @@
-import { LEVELS } from './levels.js';
-import { STORY } from './story.js';
+import { getLevels } from './data/levels.js';
+import { LANG } from './data/story.js';
 import { AudioManager } from './audio.js';
 
 export class Game {
@@ -10,6 +10,11 @@ export class Game {
         this.tileSize = 50;
         
         this.audio = new AudioManager();
+
+        // Language & Levels
+        this.language = 'zh'; // Default to Chinese
+        document.body.classList.add(`lang-${this.language}`);
+        this.levels = getLevels(this.language);
 
         // Initialize UI Text
         this.initUI();
@@ -46,6 +51,26 @@ export class Game {
         this.bindInput();
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
+    }
+
+    setLanguage(lang) {
+        if (this.language === lang) return;
+        this.language = lang;
+        this.levels = getLevels(this.language);
+        
+        // Update body class for CSS styling (e.g., fonts)
+        document.body.classList.remove('lang-zh', 'lang-en');
+        document.body.classList.add(`lang-${lang}`);
+
+        this.initUI();
+        
+        // Update active button state
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.remove('active');
+            // Simple check based on text content or we could add data-lang attribute
+            const btnLang = btn.innerText === '中文' ? 'zh' : 'en';
+            if (btnLang === lang) btn.classList.add('active');
+        });
     }
 
     spawnParticles(x, y, count, color, type = 'move') {
@@ -124,23 +149,38 @@ export class Game {
     }
 
     initUI() {
+        const story = LANG[this.language];
+
         // Start Screen
         const startScreen = document.querySelector('#start-screen');
-        startScreen.querySelector('h1').innerHTML = `${STORY.title}<br><span style="font-size:18px; color:#888;">${STORY.subtitle}</span>`;
-        startScreen.querySelector('p').innerHTML = STORY.startScreen.description;
-        startScreen.querySelector('button').innerText = STORY.startScreen.button;
+        // Only update title/desc/button, preserve lang buttons
+        const h1 = startScreen.querySelector('h1');
+        if(h1) h1.innerHTML = `${story.title}<br><span style="font-size:18px; color:#888;">${story.subtitle}</span>`;
+        
+        const p = startScreen.querySelector('p');
+        if(p) p.innerHTML = story.startScreen.description;
+        
+        const btn = startScreen.querySelector('.start-btn');
+        if(btn) btn.innerText = story.startScreen.button;
 
         // Game Over Screen
         const gameOverScreen = document.querySelector('#game-over-screen');
-        gameOverScreen.querySelector('h1').innerText = STORY.gameOver.title;
-        gameOverScreen.querySelector('#death-reason').innerText = STORY.gameOver.defaultReason;
-        gameOverScreen.querySelector('button').innerText = STORY.gameOver.button;
+        gameOverScreen.querySelector('h1').innerText = story.gameOver.title;
+        gameOverScreen.querySelector('#death-reason').innerText = story.gameOver.defaultReason;
+        gameOverScreen.querySelector('button').innerText = story.gameOver.button;
 
         // Victory Screen
         const victoryScreen = document.querySelector('#victory-screen');
-        victoryScreen.querySelector('h1').innerText = STORY.victory.title;
-        victoryScreen.querySelector('div').innerHTML = STORY.victory.content;
-        victoryScreen.querySelector('button').innerText = STORY.victory.button;
+        victoryScreen.querySelector('h1').innerText = story.victory.title;
+        victoryScreen.querySelector('div').innerHTML = story.victory.content;
+        victoryScreen.querySelector('button').innerText = story.victory.button;
+
+        // HUD & Controls
+        const controlsHint = document.getElementById('controls-hint');
+        if (controlsHint) controlsHint.innerText = story.ui.controls;
+
+        const dialogNext = document.getElementById('dialog-next');
+        if (dialogNext) dialogNext.innerText = story.ui.next;
     }
 
     loadHeroImages() {
@@ -212,7 +252,7 @@ export class Game {
 
     startLevel(idx) {
         this.currentLevelIdx = idx;
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
         this.player = { ...level.start, direction: 'front' };
         this.dimension = 0;
         this.state = 'playing';
@@ -230,25 +270,9 @@ export class Game {
         this.updateMaskUI();
         
         if (idx === 0) {
-            this.showDialog(STORY.dialogs.intro);
+            this.showDialog(LANG[this.language].dialogs.intro);
         }
     }
-
-    // Fallback if updateHUD is missing in original, I should add it or check if I missed it.
-    // Looking at read_file output, I missed updateHUD in my mental check, let me check the file content again.
-    // Ah, I see updateMaskUI, checkTileEvents...
-    // Wait, in `startLevel`: `this.updateHUD();`
-    // I don't recall seeing `updateHUD` definition in the file I read.
-    // Let me check the read_file output for `updateHUD`.
-    // It's NOT there. The original file might have had a bug or I missed it.
-    // `updateMaskUI` is there. `updateHUD` is called in `startLevel`.
-    // I should probably add `updateHUD` or remove the call if it's unnecessary. 
-    // Given the prompt "remove unnecessary codes", I'll assume if it's not defined, it's broken.
-    // But maybe I should implement it?
-    // "LEVEL 1" is in the HTML.
-    // `document.getElementById('level-display').innerText = level.name.toUpperCase();` is right before `this.updateHUD()`.
-    // So maybe `updateHUD` was intended to do that?
-    // I will remove `this.updateHUD()` call if I don't see the definition.
     
     restartLevel() {
         this.startLevel(this.currentLevelIdx);
@@ -265,7 +289,7 @@ export class Game {
 
         const newX = this.player.x + dx;
         const newY = this.player.y + dy;
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
 
         if (newX < 0 || newX >= 10 || newY < 0 || newY >= 10) {
             this.audio.playBump();
@@ -295,7 +319,7 @@ export class Game {
         if (this.state !== 'playing') return;
         if (this.dimension === newDim) return;
         
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
         if (level.lockedDimensions[newDim]) {
             this.audio.playBump();
             this.shakeIntensity = 5;
@@ -320,7 +344,7 @@ export class Game {
         if (!isAtStart && level.maps[newDim][this.player.y][this.player.x] === 1) {
             this.dimension = newDim; 
             this.triggerShake();
-            this.die(STORY.dialogs.deathOverlap);
+            this.die(LANG[this.language].dialogs.deathOverlap);
             return;
         }
 
@@ -333,7 +357,7 @@ export class Game {
     }
 
     updateMaskUI() {
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
         document.querySelectorAll('.mask-btn').forEach(btn => {
             btn.classList.remove('active', 'locked');
             const typeIdx = btn.dataset.type === 'human' ? 0 : btn.dataset.type === 'heaven' ? 1 : 2;
@@ -343,11 +367,11 @@ export class Game {
     }
 
     checkTileEvents() {
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
         const tileType = level.maps[this.dimension][this.player.y][this.player.x];
 
         if (this.player.x === level.end.x && this.player.y === level.end.y) {
-            if (this.currentLevelIdx < LEVELS.length - 1) {
+            if (this.currentLevelIdx < this.levels.length - 1) {
                 this.startLevel(this.currentLevelIdx + 1);
             } else {
                 this.victory();
@@ -416,7 +440,7 @@ export class Game {
             if (this.shakeIntensity < 0.5) this.shakeIntensity = 0;
         }
 
-        const level = LEVELS[this.currentLevelIdx];
+        const level = this.levels[this.currentLevelIdx];
         const map = level.maps[this.dimension];
         
         // Get current dimension assets

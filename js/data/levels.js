@@ -1,4 +1,4 @@
-import { STORY } from './story.js';
+import { LANG } from './story.js';
 
 // --- Game Maps ---
 // 0: Path, 1: Wall, 2: Item
@@ -124,7 +124,7 @@ const L3_HEAVEN_PATTERN = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 0, 0, 0], // Pickup from 5,6 (Safe)
+    [1, 1, 1, 1, 1, 1, 0, 0, 0, 0], // Pickup from 5,6 (Safe)
     [1, 1, 1, 1, 1, 1, 0, 0, 1, 0],
     [1, 1, 1, 1, 1, 1, 0, 1, 1, 0],
     [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
@@ -135,32 +135,60 @@ const LV3_HUMAN = generateMap(0, L3_SAFE, L3_HUMAN_PATTERN);
 const LV3_HELL = generateMap(0, L3_SAFE, L3_HELL_PATTERN);
 const LV3_HEAVEN = generateMap(0, L3_SAFE, L3_HEAVEN_PATTERN);
 
-export const LEVELS = [
-    {
-        name: STORY.levels[0].name,
-        lockedDimensions: [false, true, true],
-        start: {x: 0, y: 0},
-        end: {x: 9, y: 9},
-        maps: [LV1_HUMAN, LV1_WALLS, LV1_WALLS],
-        items: { '4,4': { ...STORY.levels[0].items['4,4'], collected: false } }
-    },
-    {
-        name: STORY.levels[1].name,
-        lockedDimensions: [false, false, true],
-        start: {x: 0, y: 0},
-        end: {x: 9, y: 9},
-        maps: [LV2_HUMAN, LV2_HEAVEN, LV2_WALLS],
-        items: { '5,3': { ...STORY.levels[1].items['5,3'], collected: false } }
-    },
-    {
-        name: STORY.levels[2].name,
-        lockedDimensions: [false, false, false],
-        start: {x: 0, y: 0},
-        end: {x: 9, y: 9},
-        maps: [LV3_HUMAN, LV3_HEAVEN, LV3_HELL], // Map order: Human, Heaven, Hell (Index 0, 1, 2)
-        items: {
-            '2,4': { ...STORY.levels[2].items['2,4'], collected: false },
-            '5,6': { ...STORY.levels[2].items['5,6'], collected: false }
-        }
+export function getLevels(lang) {
+    const storyData = LANG[lang];
+    if (!storyData) {
+        console.error(`Language ${lang} not found in LANG`);
+        return [];
     }
-];
+    
+    return [
+        {
+            name: storyData.levels[0].name,
+            lockedDimensions: [false, true, true],
+            start: {x: 0, y: 0},
+            end: {x: 9, y: 9},
+            maps: [LV1_HUMAN, LV1_WALLS, LV1_WALLS],
+            items: { 
+                '4,4': { 
+                    text: storyData.levels[0].items['4,4'], 
+                    image: '1cola.png', 
+                    collected: false 
+                } 
+            }
+        },
+        {
+            name: storyData.levels[1].name,
+            lockedDimensions: [false, false, true],
+            start: {x: 0, y: 0},
+            end: {x: 9, y: 9},
+            maps: [LV2_HUMAN, LV2_HEAVEN, LV2_WALLS],
+            items: { 
+                '5,3': { 
+                    text: storyData.levels[1].items['5,3'], 
+                    image: '2dim.png', 
+                    collected: false 
+                } 
+            }
+        },
+        {
+            name: storyData.levels[2].name,
+            lockedDimensions: [false, false, false],
+            start: {x: 0, y: 0},
+            end: {x: 9, y: 9},
+            maps: [LV3_HUMAN, LV3_HEAVEN, LV3_HELL], 
+            items: {
+                '2,4': { 
+                    text: storyData.levels[2].items['2,4'], 
+                    image: '3wings.png', 
+                    collected: false 
+                },
+                '5,6': { 
+                    text: storyData.levels[2].items['5,6'], 
+                    image: '4flash.png', 
+                    collected: false 
+                }
+            }
+        }
+    ];
+}

@@ -11,6 +11,7 @@
 
 ## ✨ Features
 
+*   **Bilingual Support**: Fully playable in both **English** and **Chinese**. Select your preferred language at the start menu.
 *   **Dimension Shifting Mechanics**: Navigate the same physical space across three distinct planes of existence. What is a wall in one world might be a path in another.
     *   **Reality (Human)**: The gray, chaotic world of giants.
     *   **Heaven**: A blue, ethereal realm of air currents.
