@@ -10,7 +10,7 @@
     /* Default Font Sizes (Chinese) */
     --fs-h1: 32px;
     --fs-p: 14px;
-    --fs-hud: 14px;
+    --fs-hud: 12px;
     --fs-btn: 20px;
     --fs-mask: 24px;
     --fs-dialog: 14px;
@@ -25,7 +25,7 @@ body.lang-en {
     --fs-btn: 16px;
     --fs-mask: 18px;
     --fs-dialog: 11px;
-    --fs-hint: 9px;
+    --fs-hint: 12px;
 }
 
 body {
