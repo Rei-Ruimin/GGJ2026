@@ -29,6 +29,7 @@ export class Game {
         this.player = { x: 0, y: 0, direction: 'front' };
         this.dimension = 0; 
         this.state = 'start'; 
+        document.body.classList.add('state-start');
         this.particles = []; // Particle system
         this.shakeIntensity = 0;
 
@@ -153,12 +154,7 @@ export class Game {
 
         // Start Screen
         const startScreen = document.querySelector('#start-screen');
-        // Only update title/desc/button, preserve lang buttons
-        const h1 = startScreen.querySelector('h1');
-        if(h1) h1.innerHTML = `${story.title}<br><span style="font-size:18px; color:#888;">${story.subtitle}</span>`;
-        
-        const p = startScreen.querySelector('p');
-        if(p) p.innerHTML = story.startScreen.description;
+        // Elements removed from HTML, so no need to update h1 or p
         
         const btn = startScreen.querySelector('.start-btn');
         if(btn) btn.innerText = story.startScreen.button;
@@ -256,6 +252,7 @@ export class Game {
         this.player = { ...level.start, direction: 'front' };
         this.dimension = 0;
         this.state = 'playing';
+        document.body.classList.remove('state-start');
         this.particles = []; // Clear particles
         
         // Audio Init
@@ -420,9 +417,8 @@ export class Game {
     }
 
     renderStartScreen() {
-        // Draw a solid dark background to ensure no bleed-through
-        this.ctx.fillStyle = '#111';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // Clear the canvas to allow CSS backgrounds to show through
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     renderGame() {

@@ -216,6 +216,53 @@ canvas {
     z-index: 30;
 }
 
+#title-avatar {
+    position: absolute;
+    right: 220px;
+    bottom: -50px;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1; /* Place behind buttons but above background */
+    image-rendering: pixelated;
+}
+
+#start-screen {
+    background-image: url('../assets/ui/title.png');
+    background-size: contain; /* Ensure the whole image is visible */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: transparent; 
+    justify-content: flex-start; /* Align to top */
+    align-items: flex-end; /* Align to right */
+
+    .lang-select {
+        padding-top: 180px; 
+        padding-right: 40px;
+    }
+    .start-btn {
+        margin-right: 40px; 
+
+    }
+}
+
+#start-screen.overlay {
+    background-color: transparent; /* Only override color, not the image */
+    box-shadow: none; /* Remove any default shadows if present */
+}
+
+/* Hide overlapping elements during start state */
+body.state-start .hud,
+body.state-start .controls-hint,
+body.state-start .scanlines,
+body.state-start .mask-controls {
+    display: none !important;
+}
+
+/* Ensure other overlays keep the dark background */
+#game-over-screen, #victory-screen {
+    background: rgba(0,0,0,0.95);
+}
+
 .hidden { display: none !important; }
 
 h1 { font-size: var(--fs-h1); color: #fff; margin-bottom: 30px; line-height: 1.4; text-transform: uppercase; letter-spacing: 2px; }
