@@ -227,6 +227,19 @@ canvas {
     pointer-events: none;
     z-index: -1; /* Place behind buttons but above background */
     image-rendering: pixelated;
+    animation: avatar-glow 4s infinite alternate ease-in-out;
+}
+
+@keyframes avatar-glow {
+    0% {
+        filter: brightness(0.9) contrast(1);
+    }
+    50% {
+        filter: brightness(1.1) contrast(1.05) drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+    }
+    100% {
+        filter: brightness(1) contrast(1);
+    }
 }
 
 #start-screen {
