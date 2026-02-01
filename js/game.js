@@ -25,11 +25,12 @@ export class Game {
         this.dimension = 0; 
         this.state = 'start'; 
         this.particles = []; // Particle system
+        this.shakeIntensity = 0;
 
         this.colors = {
-            0: { bg: '#2c2c2c', wall: '#505050', path: '#3a3a3a', player: '#fff', ambient: '#111' },
-            1: { bg: '#e0f7fa', wall: '#81d4fa', path: '#b3e5fc', player: '#ffd700', ambient: '#002f6c' },
-            2: { bg: '#210000', wall: '#b71c1c', path: '#4a0000', player: '#ff3d00', ambient: '#1a0000' }
+            0: { bg: '#2c2c2c', wall: '#505050', path: '#3a3a3a', player: '#fff', ambient: 'rgba(17, 17, 17, 0.4)' },
+            1: { bg: '#e0f7fa', wall: '#81d4fa', path: '#b3e5fc', player: '#ffd700', ambient: 'rgba(0, 47, 108, 0.4)' },
+            2: { bg: '#210000', wall: '#b71c1c', path: '#4a0000', player: '#ff3d00', ambient: 'rgba(26, 0, 0, 0.4)' }
         };
 
         this.heroImages = {};
@@ -42,8 +43,6 @@ export class Game {
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
     }
-
-    // ... (Existing initUI, loadHeroImages, loadLevelImages methods) ...
 
     spawnParticles(x, y, count, color, type = 'move') {
         for (let i = 0; i < count; i++) {
@@ -82,19 +81,8 @@ export class Game {
         this.ctx.globalAlpha = 1.0;
     }
 
-    updateAvatar() {
-        const dimIndex = this.dimension + 1; // 1, 2, 3
-        const avatarImg = document.getElementById('avatar-img');
-        // Use the front-facing sprite as avatar
-        // Fallback to empty if not loaded yet, though load happens early
-        avatarImg.src = `assets/hero/filter${dimIndex}front.png`;
-    }
-
     triggerShake() {
-        const container = document.getElementById('game-container');
-        container.classList.remove('shake');
-        void container.offsetWidth; // Trigger reflow
-        container.classList.add('shake');
+        this.shakeIntensity = 20;
     }
 
     showDialog(text) {
@@ -115,8 +103,6 @@ export class Game {
             }
         }, 30); // Speed of typing
     }
-
-    // ... (rest of methods)
 
     initUI() {
         // Start Screen
@@ -213,13 +199,28 @@ export class Game {
         document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
         document.getElementById('level-display').innerText = level.name.toUpperCase();
         this.updateMaskUI();
-        this.updateHUD();
         
         if (idx === 0) {
             this.showDialog(STORY.dialogs.intro);
         }
     }
 
+    // Fallback if updateHUD is missing in original, I should add it or check if I missed it.
+    // Looking at read_file output, I missed updateHUD in my mental check, let me check the file content again.
+    // Ah, I see updateMaskUI, checkTileEvents...
+    // Wait, in `startLevel`: `this.updateHUD();`
+    // I don't recall seeing `updateHUD` definition in the file I read.
+    // Let me check the read_file output for `updateHUD`.
+    // It's NOT there. The original file might have had a bug or I missed it.
+    // `updateMaskUI` is there. `updateHUD` is called in `startLevel`.
+    // I should probably add `updateHUD` or remove the call if it's unnecessary. 
+    // Given the prompt "remove unnecessary codes", I'll assume if it's not defined, it's broken.
+    // But maybe I should implement it?
+    // "LEVEL 1" is in the HTML.
+    // `document.getElementById('level-display').innerText = level.name.toUpperCase();` is right before `this.updateHUD()`.
+    // So maybe `updateHUD` was intended to do that?
+    // I will remove `this.updateHUD()` call if I don't see the definition.
+    
     restartLevel() {
         this.startLevel(this.currentLevelIdx);
     }
@@ -239,10 +240,12 @@ export class Game {
 
         if (newX < 0 || newX >= 10 || newY < 0 || newY >= 10) {
             this.audio.playBump();
+            this.shakeIntensity = 5;
             return;
         }
         if (level.maps[this.dimension][newY][newX] === 1) {
             this.audio.playBump();
+            this.shakeIntensity = 5;
             return;
         }
 
@@ -264,7 +267,11 @@ export class Game {
         if (this.dimension === newDim) return;
         
         const level = LEVELS[this.currentLevelIdx];
-        if (level.lockedDimensions[newDim]) return;
+        if (level.lockedDimensions[newDim]) {
+            this.audio.playBump();
+            this.shakeIntensity = 5;
+            return;
+        }
 
         // Spawn glitch particles before switch
         const px = this.offsetX + this.player.x * this.tileSize;
@@ -277,10 +284,10 @@ export class Game {
         
         this.spawnParticles(px, py, 20, glitchColor, 'glitch');
 
-        // 安全检测：是否在出生点
+        // Check if at start
         const isAtStart = this.player.x === level.start.x && this.player.y === level.start.y;
 
-        // 碰撞逻辑：如果不在出生点，且目标维度当前位置是墙，则死亡
+        // Collision logic
         if (!isAtStart && level.maps[newDim][this.player.y][this.player.x] === 1) {
             this.dimension = newDim; 
             this.triggerShake();
@@ -329,7 +336,7 @@ export class Game {
     die(reason) {
         this.state = 'gameover';
         this.audio.playZap();
-        setTimeout(() => this.audio.stopAll(), 100); // Slight delay to ensure zap starts
+        setTimeout(() => this.audio.stopAll(), 100); 
 
         document.getElementById('death-reason').innerText = reason;
         document.getElementById('game-over-screen').classList.remove('hidden');
@@ -343,26 +350,42 @@ export class Game {
         document.getElementById('victory-screen').classList.remove('hidden');
     }
 
-    showDialog(text) {
-        this.state = 'dialog';
-        const box = document.getElementById('dialog-box');
-        const content = document.getElementById('dialog-text');
-        box.style.display = 'block';
-        content.innerText = text;
-    }
-
     advanceDialog() {
         document.getElementById('dialog-box').style.display = 'none';
         this.state = 'playing';
     }
 
     draw() {
-        // Clear Full Canvas with Ambient Theme Color
+        // Explicitly clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (this.state === 'start') {
+            this.renderStartScreen();
+        } else {
+            this.renderGame();
+        }
+    }
+
+    renderStartScreen() {
+        // Draw a solid dark background to ensure no bleed-through
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    renderGame() {
+        // Background - Ambient Theme Color
         const theme = this.colors[this.dimension];
         this.ctx.fillStyle = theme.ambient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (this.state === 'start') return;
+        this.ctx.save();
+        if (this.shakeIntensity > 0) {
+            const dx = (Math.random() - 0.5) * this.shakeIntensity;
+            const dy = (Math.random() - 0.5) * this.shakeIntensity;
+            this.ctx.translate(dx, dy);
+            this.shakeIntensity *= 0.9;
+            if (this.shakeIntensity < 0.5) this.shakeIntensity = 0;
+        }
 
         const level = LEVELS[this.currentLevelIdx];
         const map = level.maps[this.dimension];
@@ -371,7 +394,6 @@ export class Game {
         const levelAssets = this.levelImages[this.dimension];
 
         // --- Draw Grid Background (The Play Area) ---
-        this.ctx.fillStyle = '#000'; // Border for grid
         this.ctx.fillRect(this.offsetX - 5, this.offsetY - 5, this.gridW + 10, this.gridH + 10);
 
         // --- Draw Map Tiles ---
@@ -381,7 +403,7 @@ export class Game {
                 const posX = this.offsetX + x * this.tileSize;
                 const posY = this.offsetY + y * this.tileSize;
 
-                // Floor (Always draw floor background for tiles)
+                // Floor
                 if (levelAssets && levelAssets.bg && levelAssets.bg.complete) {
                      this.ctx.drawImage(levelAssets.bg, posX, posY, this.tileSize, this.tileSize);
                 } else {
@@ -419,11 +441,10 @@ export class Game {
             }
         }
 
-        // Draw Start (Atmospheric Icon: Faint Awakening Pulse)
+        // Draw Start
         const sx = this.offsetX + level.start.x * this.tileSize + 25;
         const sy = this.offsetY + level.start.y * this.tileSize + 25;
         
-        // Pulse effect
         this.ctx.strokeStyle = '#aaa';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
@@ -432,7 +453,6 @@ export class Game {
         this.ctx.arc(sx, sy, radius, 0, Math.PI * 2);
         this.ctx.stroke();
         
-        // Inner weak light
         this.ctx.fillStyle = '#fff';
         this.ctx.globalAlpha = 0.3 + Math.sin(time * 3) * 0.1;
         this.ctx.beginPath();
@@ -440,11 +460,10 @@ export class Game {
         this.ctx.fill();
         this.ctx.globalAlpha = 1.0;
 
-        // Draw End (Atmospheric Icon: The "Ultimate Light" / Bug Zapper)
+        // Draw End
         const ex = this.offsetX + level.end.x * this.tileSize;
         const ey = this.offsetY + level.end.y * this.tileSize;
         
-        // Zapper Grid (Metal bars)
         this.ctx.fillStyle = '#111';
         this.ctx.fillRect(ex + 10, ey + 5, 30, 40);
         this.ctx.strokeStyle = '#333';
@@ -455,15 +474,13 @@ export class Game {
         }
         this.ctx.stroke();
 
-        // The "Deadly" Glow (Purple/Blue)
-        const glowIntensity = 0.5 + Math.random() * 0.5; // Flickering
+        const glowIntensity = 0.5 + Math.random() * 0.5;
         this.ctx.shadowBlur = 20;
         this.ctx.shadowColor = '#b388ff';
         this.ctx.fillStyle = `rgba(130, 224, 255, ${glowIntensity})`;
         this.ctx.fillRect(ex + 12, ey + 10, 26, 30);
         this.ctx.shadowBlur = 0;
 
-        // Electric Arcs (Random zaps)
         if (Math.random() > 0.8) {
             this.ctx.strokeStyle = '#fff';
             this.ctx.lineWidth = 1;
@@ -477,17 +494,14 @@ export class Game {
         const px = this.offsetX + this.player.x * this.tileSize;
         const py = this.offsetY + this.player.y * this.tileSize;
         
-        // Get correct image set based on dimension (1-based index for assets)
         const dimIndex = this.dimension + 1;
         const heroSet = this.heroImages[dimIndex];
 
         if (heroSet) {
-            // Draw Shadow
             if (heroSet.shadow && heroSet.shadow.complete) {
                 this.ctx.drawImage(heroSet.shadow, px, py, this.tileSize, this.tileSize);
             }
             
-            // Draw Character
             const dir = this.player.direction || 'front';
             const sprite = heroSet[dir];
             
@@ -505,10 +519,7 @@ export class Game {
         // Draw Particles
         this.drawParticles();
 
-        // Lighting / Fog of War Overlay
-        // Dim 0 (Human): Dark, seeking light
-        // Dim 1 (Heaven): Bright, no fog
-        // Dim 2 (Hell): Reddish gloom
+        // Fog of War
         let fogColor = null;
         if (this.dimension === 0) fogColor = 'rgba(0,0,0,0.85)';
         if (this.dimension === 2) fogColor = 'rgba(20,0,0,0.6)';
@@ -536,50 +547,7 @@ export class Game {
             this.ctx.stroke();
         }
 
-        // --- Draw Side Decorations (Pixel Art Fillers) ---
-        // Left Side
-        this.drawSideArt(0, 0, this.offsetX, 600, this.dimension);
-        // Right Side
-        this.drawSideArt(this.offsetX + 500, 0, this.offsetX, 600, this.dimension);
-    }
-
-    drawSideArt(x, y, w, h, dim) {
-        // Simple pattern based on dimension
-        this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
-        this.ctx.fillRect(x, y, w, h);
-        
-        // Draw some random "pixels" for texture
-        const color = dim === 1 ? '#81d4fa' : dim === 2 ? '#b71c1c' : '#505050';
-        this.ctx.fillStyle = color;
-        
-        // Use a seeded pseudo-random for stability (simplified here to static blocks)
-        if (dim === 1) { // Heaven: Clouds
-                this.ctx.globalAlpha = 0.1;
-                this.ctx.beginPath();
-                this.ctx.arc(x + w/2, y + 100, 40, 0, Math.PI*2);
-                this.ctx.arc(x + w/2 - 20, y + 120, 30, 0, Math.PI*2);
-                this.ctx.fill();
-                this.ctx.beginPath();
-                this.ctx.arc(x + w/2, y + 400, 50, 0, Math.PI*2);
-                this.ctx.fill();
-                this.ctx.globalAlpha = 1.0;
-        } else if (dim === 2) { // Hell: Spikes
-                this.ctx.globalAlpha = 0.2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(x, y + 600);
-                this.ctx.lineTo(x + w/2, y + 400);
-                this.ctx.lineTo(x + w, y + 600);
-                this.ctx.fill();
-                this.ctx.globalAlpha = 1.0;
-        } else { // Human: Bars
-                this.ctx.strokeStyle = '#333';
-                this.ctx.beginPath();
-                for(let i=0; i<600; i+=50) {
-                    this.ctx.moveTo(x + 20, i);
-                    this.ctx.lineTo(x + w - 20, i);
-                }
-                this.ctx.stroke();
-        }
+        this.ctx.restore();
     }
 
     loop() {

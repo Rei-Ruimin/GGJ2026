@@ -10,6 +10,11 @@
 
 body {
     background-color: var(--bg-color);
+    background-image: url('../assets/ui/game_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--text-color);
     font-family: 'Press Start 2P', 'DotGothic16', monospace;
     display: flex;
@@ -29,7 +34,6 @@ body {
     height: 600px;
     box-shadow: 0 0 30px rgba(0,0,0,0.8);
     border: 4px solid #333;
-    background: #000;
 }
 
 canvas {
@@ -60,22 +64,6 @@ canvas {
     text-shadow: 2px 2px 0 #000;
     z-index: 2;
     align-items: center;
-}
-
-#player-avatar {
-    width: 50px;
-    height: 50px;
-    border: 2px solid #fff;
-    background: #000;
-    margin-right: 15px;
-    image-rendering: pixelated;
-    overflow: hidden;
-}
-
-#player-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 /* Bottom Controls */
@@ -154,6 +142,20 @@ canvas {
     min-height: 48px; /* Fixed height to prevent jumpiness */
 }
 
+#dialog-avatar {
+    position: absolute;
+    top: -160px;
+    left: -30px;
+    width: 200px;
+    height: 200px;
+    border: none;
+    background: transparent;
+    image-rendering: pixelated;
+    box-shadow: none;
+    z-index: 25;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
 #dialog-next {
     float: right;
     font-size: 12px;
@@ -223,8 +225,16 @@ button.start-btn:hover { background: #ddd; transform: scale(1.05); }
 @keyframes blink { 50% { opacity: 0; } }
 
 .controls-hint {
-    margin-top: 15px;
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    color: #fff;
+    padding: 15px 0;
     font-size: 12px;
-    color: #666;
     text-align: center;
+    background: rgba(0, 0, 0, 0.6);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 5;
+    letter-spacing: 1px;
 }

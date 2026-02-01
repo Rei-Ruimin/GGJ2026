@@ -45,12 +45,32 @@ export class AudioManager {
 
     // --- Procedural Music Generators ---
 
+    createNoiseBuffer() {
+        const bufferSize = 2 * this.ctx.sampleRate;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+    }
+
     startRealityBGM() {
         // Theme: "Night Mystery" - Floating, breathing pad
         const rootFreq = 110; // A2
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
+
+        // Ambient Wind Noise
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer();
+        noise.loop = true;
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.value = 400;
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.value = 0.05;
 
         // Osc 1: Fundamental Sine
         osc1.type = 'sine';
@@ -67,10 +87,14 @@ export class AudioManager {
         lfoGain.gain.value = 0.15; // Depth of breath
         lfo.connect(lfoGain);
         lfoGain.connect(gain.gain);
+        lfoGain.connect(noiseGain.gain);
         
         // Mix
         osc1.connect(gain);
         osc2.connect(gain);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.bgmGains[0]);
         gain.connect(this.bgmGains[0]);
         
         // Base volume
@@ -78,52 +102,60 @@ export class AudioManager {
 
         osc1.start();
         osc2.start();
+        noise.start();
         lfo.start();
 
-        this.bgmNodes[0] = { stop: () => { osc1.stop(); osc2.stop(); lfo.stop(); } };
+        this.bgmNodes[0] = { stop: () => { osc1.stop(); osc2.stop(); noise.stop(); lfo.stop(); } };
     }
 
     startHeavenBGM() {
         // Theme: "False Holiness" - Warm, soft organ/choir
-        // Lower octave to fix harshness
         const chord = [130.81, 164.81, 196.00, 246.94]; // C3 Major 7 chord
         const masterNode = this.ctx.createGain();
-        masterNode.connect(this.bgmGains[1]);
         masterNode.gain.value = 0.3;
 
-        // Lowpass Filter to soften the sound (Remove harshness)
+        // Shimmer Noise
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer();
+        noise.loop = true;
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'highpass';
+        noiseFilter.frequency.value = 3000;
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.value = 0.02;
+
+        // Lowpass Filter to soften the sound
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 800; // Cutoff high frequencies
+        filter.frequency.value = 800; 
+        
         masterNode.connect(filter);
         filter.connect(this.bgmGains[1]);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.bgmGains[1]);
 
         const nodes = [];
-
         chord.forEach((freq, i) => {
             const osc = this.ctx.createOscillator();
-            osc.type = 'triangle'; // Softer than Sawtooth, richer than Sine
+            osc.type = 'triangle';
             osc.frequency.value = freq;
-            
-            // Subtle detune for chorus effect
             if (i % 2 === 0) osc.detune.value = 5; 
             else osc.detune.value = -5;
-
             osc.connect(masterNode);
             osc.start();
             nodes.push(osc);
         });
 
-        // Slow shimmer LFO on Filter frequency
         const lfo = this.ctx.createOscillator();
         lfo.frequency.value = 0.5;
         const lfoGain = this.ctx.createGain();
-        lfoGain.gain.value = 200; // Modulate filter by +/- 200Hz
+        lfoGain.gain.value = 200;
         lfo.connect(lfoGain);
         lfoGain.connect(filter.frequency);
         lfo.start();
 
-        this.bgmNodes[1] = { stop: () => { nodes.forEach(n => n.stop()); lfo.stop(); } };
+        this.bgmNodes[1] = { stop: () => { nodes.forEach(n => n.stop()); noise.stop(); lfo.stop(); } };
     }
 
     startHellBGM() {
@@ -132,36 +164,44 @@ export class AudioManager {
         osc.type = 'sawtooth';
         osc.frequency.value = 40; // Low bass drone
 
-        // Filter that opens and closes
+        // Rumble Noise
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer();
+        noise.loop = true;
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.value = 100;
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.value = 0.1;
+
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.Q.value = 5; // Resonance
+        filter.Q.value = 5; 
         
-        // LFO for rhythmic pulse (Heartbeat)
         const lfo = this.ctx.createOscillator();
         lfo.type = 'square';
-        lfo.frequency.value = 2; // 2 beats per second
-        
+        lfo.frequency.value = 2;
         const lfoGain = this.ctx.createGain();
-        lfoGain.gain.value = 300; // Filter sweep depth
-        
+        lfoGain.gain.value = 300;
         lfo.connect(lfoGain);
         lfoGain.connect(filter.frequency);
         
-        // Base filter value
         filter.frequency.value = 200;
-
         const gain = this.ctx.createGain();
         gain.gain.value = 0.3;
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.bgmGains[2]);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.bgmGains[2]);
         
         osc.start();
+        noise.start();
         lfo.start();
 
-        this.bgmNodes[2] = { stop: () => { osc.stop(); lfo.stop(); } };
+        this.bgmNodes[2] = { stop: () => { osc.stop(); noise.stop(); lfo.stop(); } };
     }
 
     makeDistortionCurve(amount) {
@@ -196,8 +236,10 @@ export class AudioManager {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         
+        // Random pitch variation (±100 cents)
+        osc.detune.value = (Math.random() * 200) - 100;
+
         // Soft white noise burst roughly simulated by randomized frequency ramps or simple low sine drop
-        // Let's stick to a soft tone drop for "Whoosh"
         osc.frequency.setValueAtTime(200, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.15);
         
@@ -215,6 +257,9 @@ export class AudioManager {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         
+        // Random pitch variation (±100 cents)
+        osc.detune.value = (Math.random() * 200) - 100;
+
         osc.type = 'square';
         osc.frequency.setValueAtTime(80, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
@@ -232,6 +277,9 @@ export class AudioManager {
         if (!this.initialized) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
+
+        // Random pitch variation (±100 cents)
+        osc.detune.value = (Math.random() * 200) - 100;
 
         // High pitch zap
         osc.type = 'sawtooth';
