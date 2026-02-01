@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap');
+@font-face {
+    font-family: 'GameFont';
+    src: url('../assets/fonts/FZG_CN.ttf') format('truetype');
+}
 
 :root {
     --bg-color: #121212;
@@ -10,22 +13,22 @@
     /* Default Font Sizes (Chinese) */
     --fs-h1: 32px;
     --fs-p: 14px;
-    --fs-hud: 12px;
+    --fs-hud: 18px;
     --fs-btn: 20px;
     --fs-mask: 24px;
-    --fs-dialog: 14px;
-    --fs-hint: 12px;
+    --fs-dialog: 18px;
+    --fs-hint: 20px;
 }
 
 /* Language Specific Overrides */
 body.lang-en {
-    --fs-h1: 24px;
-    --fs-p: 10px;
-    --fs-hud: 10px;
-    --fs-btn: 16px;
-    --fs-mask: 18px;
-    --fs-dialog: 11px;
-    --fs-hint: 12px;
+    --fs-h1: 32px;
+    --fs-p: 14px;
+    --fs-hud: 18px;
+    --fs-btn: 20px;
+    --fs-mask: 24px;
+    --fs-dialog: 18px;
+    --fs-hint: 20px;
 }
 
 body {
@@ -36,7 +39,7 @@ body {
     background-repeat: no-repeat;
     background-attachment: fixed;
     color: var(--text-color);
-    font-family: 'Press Start 2P', 'DotGothic16', monospace;
+    font-family: 'GameFont', monospace;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -227,7 +230,7 @@ canvas {
 }
 
 #start-screen {
-    background-image: url('../assets/ui/title.png');
+    /* Background image is set via body class below */
     background-size: contain; /* Ensure the whole image is visible */
     background-repeat: no-repeat;
     background-position: center;
@@ -243,6 +246,15 @@ canvas {
         margin-right: 40px; 
 
     }
+}
+
+/* Language Specific Backgrounds */
+body.lang-zh #start-screen {
+    background-image: url('../assets/ui/title_cn.png');
+}
+
+body.lang-en #start-screen {
+    background-image: url('../assets/ui/title_eng.png');
 }
 
 #start-screen.overlay {
