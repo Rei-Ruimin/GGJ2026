@@ -524,23 +524,41 @@ export class Game {
         const px = this.offsetX + this.player.x * this.tileSize;
         const py = this.offsetY + this.player.y * this.tileSize;
         
+        // --- Added: Breathing & Tilt Animations ---
+        const breathingTime = Date.now() / 200; // Speed of breathing
+        const bobOffset = Math.sin(breathingTime); // Up/down movement
+        
+        let rotation = 0;
+        if (this.player.direction === 'left') rotation = -0.15; // ~8.5 degrees
+        if (this.player.direction === 'right') rotation = 0.15;
+        // ------------------------------------------
+
         const dimIndex = this.dimension + 1;
         const heroSet = this.heroImages[dimIndex];
 
         if (heroSet) {
+            // Draw Shadow (Static on ground)
             if (heroSet.shadow && heroSet.shadow.complete) {
                 this.ctx.drawImage(heroSet.shadow, px, py, this.tileSize, this.tileSize);
             }
+            
+            // Draw Character (Animated)
+            this.ctx.save();
+            // Move center of drawing to player tile center + bobbing
+            this.ctx.translate(px + this.tileSize / 2, py + this.tileSize / 2 + bobOffset);
+            this.ctx.rotate(rotation);
             
             const dir = this.player.direction || 'front';
             const sprite = heroSet[dir];
             
             if (sprite && sprite.complete) {
-                this.ctx.drawImage(sprite, px, py, this.tileSize, this.tileSize);
+                // Draw sprite centered at (0,0) because of translate
+                this.ctx.drawImage(sprite, -this.tileSize / 2, -this.tileSize / 2, this.tileSize, this.tileSize);
             } else {
                 this.ctx.fillStyle = theme.player;
-                this.ctx.fillRect(px + 10, py + 10, 30, 30);
+                this.ctx.fillRect(-15, -15, 30, 30);
             }
+            this.ctx.restore();
         } else {
              this.ctx.fillStyle = theme.player;
              this.ctx.fillRect(px + 15, py + 15, 20, 25);
