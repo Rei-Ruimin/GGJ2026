@@ -13,7 +13,7 @@ export const STORY = {
     victory: {
         title: "大梦初醒",
         content: `
-            <p style="color: #fff; margin-bottom: 20px; font-size: 14px;">> 你义无反顾地冲向了那团紫色的“终极圣光”。<br>“滋啦——！！！”<br>剧烈的震动和焦灼感传遍全身，紧接着，整个世界陷入了彻底的黑暗。</p>
+            <p style="color: #fff; margin-bottom: 20px; font-size: 14px;">> 你义无反顾地冲向了那团“终极圣光”。<br>“滋啦——！！！”<br>剧烈的震动和焦灼感传遍全身，紧接着，整个世界陷入了彻底的黑暗。</p>
             <p style="color: #aaa; font-size: 14px;">> 巨人的咒骂声在上方响起：<br>“搞什么？这破灭蚊灯怎么短路了？竟然被一只飞蛾把灯丝给撞断了……”<br><br>> 你躺在桌面上，虽然翅膀冒着烟，但你感到前所未有的满足：<br>你亲手熄灭了“太阳”，成为了这个黑夜唯一的英雄。</p>
         `,
         button: "在宁静中安眠 (End)"
