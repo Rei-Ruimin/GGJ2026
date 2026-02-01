@@ -46,7 +46,7 @@ export const LANG = {
         ],
         ui: {
             levelPrefix: "LEVEL ",
-            controls: "WASD: 移动 | 1/2/3: 切换位面",
+            controls: "WASD: 移动 | 1/2/3: 切换面具",
             next: "[继续 / NEXT]",
             loading: "加载中..."
         }
@@ -98,7 +98,7 @@ export const LANG = {
         ],
         ui: {
             levelPrefix: "LEVEL ",
-            controls: "WASD: Move | 1/2/3: Switch Reality",
+            controls: "WASD: Move | 1/2/3: Switch Mask",
             next: "[NEXT]",
             loading: "LOADING..."
         }

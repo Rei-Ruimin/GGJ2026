@@ -2,7 +2,7 @@
 
 > *"In that slumbering realm of giants, I saw a sun. It was the ultimate truth, a holy sanctuary of warmth."*
 
-**A Romantic Pursuit** is a surreal pixel-art puzzle game developed for **Global Game Jam 2026**. You play as an "artist" seeking the ultimate light, embarking on a great expedition across three overlapping dimensions.
+**A Romantic Pursuit** is a surreal pixel-art puzzle game developed for **Global Game Jam 2026**. You play as an "artist" seeking the ultimate light, embarking on a great expedition through the vision of three sacred **masks** that reveal overlapping dimensions.
 
 ![Status](https://img.shields.io/github/actions/workflow/status/Rei-Ruimin/ggj2026/deploy.yml?label=build)
 
@@ -13,11 +13,11 @@
 ## ✨ Features
 
 *   **Bilingual Support**: Fully playable in both **English** and **Chinese**. Select your preferred language at the start menu.
-*   **Dimension Shifting Mechanics**: Navigate the same physical space across three distinct planes of existence. What is a wall in one world might be a path in another.
-    *   **Reality (Human)**: The gray, chaotic world of giants.
-    *   **Heaven**: A blue, ethereal realm of air currents.
-    *   **Hell**: A red, scorching abyss of danger.
-*   **Spatial Awareness Puzzle**: You must memorize the layout of other dimensions. Switching into a solid object causes "Spatial Conflict," instantly destroying your fragile form.
+*   **Mask-Shifting Mechanics**: Navigate the same physical space across three distinct planes of existence by switching between different masks. What is a wall in one world might be a path in another.
+    *   **Human Mask**: The gray, chaotic world of giants.
+    *   **Heaven Mask**: A blue, ethereal realm of air currents.
+    *   **Abyss Mask**: A red, scorching abyss of danger.
+*   **Spatial Awareness Puzzle**: You must memorize the layout of other dimensions revealed by the masks. Switching into a solid object causes "Spatial Conflict," instantly destroying your fragile form.
 *   **Retro Aesthetics**: Immersive CRT monitor effects, scanlines, and pixel art style.
 *   **Dark Narrative**: Experience a tragic, humorous story from the perspective of a moth who mistakes a bug zapper for a deity.
 
@@ -26,9 +26,9 @@
 | Action | Key / Button |
 | :--- | :--- |
 | **Move** | `W` `A` `S` `D` / Arrow Keys |
-| **Shift to Reality** | `1` |
-| **Shift to Heaven** | `2` |
-| **Shift to Hell** | `3` |
+| **Switch to Human Mask** | `1` |
+| **Switch to Heaven Mask** | `2` |
+| **Switch to Abyss Mask** | `3` |
 | **Dialog / Next** | `Space` / `Enter` |
 
 ## 🛠️ Technology
